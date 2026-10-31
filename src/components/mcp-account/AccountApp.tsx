@@ -22,6 +22,7 @@ export const AccountApp = ({ icon }: AccountAppProps) => {
   const [section, setSection] = useState<AccountSection>("overview")
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState("")
+  const [connectionIssue, setConnectionIssue] = useState(false)
   const acceptResult = (structured: unknown, updateSection = true) => {
     const parsed = accountSnapshotSchema.safeParse(structured)
     if (!parsed.success) {
@@ -30,6 +31,7 @@ export const AccountApp = ({ icon }: AccountAppProps) => {
       )
       return
     }
+    setConnectionIssue(false)
     setAccount(parsed.data)
     if (updateSection) setSection(parsed.data.section)
     setNotice("")
@@ -76,12 +78,14 @@ export const AccountApp = ({ icon }: AccountAppProps) => {
         name: "manage_account",
         arguments: { section },
       })
-      if (result.isError)
+      if (result.isError) {
+        setConnectionIssue(true)
         setNotice(
           "Your connection needs attention. Reconnect CreativeOtter from your assistant.",
         )
-      else acceptResult(result.structuredContent, false)
+      } else acceptResult(result.structuredContent, false)
     } catch {
+      setConnectionIssue(true)
       setNotice(
         "Couldn’t refresh your account. Try again or reconnect CreativeOtter.",
       )
@@ -201,6 +205,7 @@ export const AccountApp = ({ icon }: AccountAppProps) => {
         {section === "overview" && (
           <AccountOverview
             account={account}
+            connectionIssue={connectionIssue || Boolean(error)}
             icon={icon}
             onActivity={() => setSection("activity")}
             onSettings={() => setSection("settings")}

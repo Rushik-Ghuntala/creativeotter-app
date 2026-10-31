@@ -1,11 +1,7 @@
 import { build } from "esbuild"
 import { readFile, writeFile, mkdir } from "node:fs/promises"
-import sharp from "sharp"
 
-const icon = await sharp("public/creativeotter.png")
-  .resize(280, 280, { fit: "inside" })
-  .webp({ quality: 85 })
-  .toBuffer()
+const icon = await readFile("public/creativeotter-widget.webp")
 const result = await build({
   entryPoints: ["src/lib/mcp/ui/entry.tsx"],
   bundle: true,

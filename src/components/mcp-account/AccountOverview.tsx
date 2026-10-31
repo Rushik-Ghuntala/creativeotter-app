@@ -5,6 +5,7 @@ import type { AccountSnapshot } from "@/lib/mcp/account"
 
 type AccountOverviewProps = {
   account: AccountSnapshot
+  connectionIssue: boolean
   icon: string
   onActivity: () => void
   onSettings: () => void
@@ -12,6 +13,7 @@ type AccountOverviewProps = {
 
 export const AccountOverview = ({
   account,
+  connectionIssue,
   icon,
   onActivity,
   onSettings,
@@ -29,12 +31,14 @@ export const AccountOverview = ({
       <div className="hero-content">
         <p className="eyebrow hero-eyebrow">
           <span className="status-dot" />
-          YOUR WORKSPACE IS READY
+          {connectionIssue
+            ? "CONNECTION NEEDS ATTENTION"
+            : "YOUR WORKSPACE IS READY"}
         </p>
         <h1>
-          Good ideas.
+          {connectionIssue ? "Let’s get you" : "Good ideas."}
           <br />
-          Great company.
+          {connectionIssue ? "reconnected." : "Great company."}
         </h1>
         <p className="hero-subtitle">
           Your assistants. Your studio. One connection.
@@ -44,7 +48,9 @@ export const AccountOverview = ({
             size={14}
             aria-hidden="true"
           />
-          Connected to {account.workspace.name}
+          {connectionIssue
+            ? "Reconnect CreativeOtter from your assistant"
+            : `Connected to ${account.workspace.name}`}
         </span>
       </div>
       <img
