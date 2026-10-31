@@ -1,6 +1,17 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { z } from "zod"
+import { registerAppTool } from "@modelcontextprotocol/ext-apps/server"
+import {
+  accountSectionSchema,
+  accountSnapshotSchema,
+  createAccountSnapshot,
+} from "@/lib/mcp/account"
+import {
+  ACCOUNT_RESOURCE_URI,
+  registerAccountResource,
+} from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
+
+const productVersion = "0.2.0"
 
 const readOnly = {
   readOnlyHint: true,
@@ -10,8 +21,17 @@ const readOnly = {
 }
 const securitySchemes = [{ type: "oauth2", scopes: ["email"] }]
 
-export const createCreativeOtterMcp = (context: McpContext, appUrl: string) => {
-  const server = new McpServer({ name: "creativeotter", version: "0.1.0" })
+export const createCreativeOtterMcp = (
+  context: McpContext,
+  appUrl: string,
+  email: string | null = null,
+) => {
+  const server = new McpServer({
+    name: "creativeotter",
+    title: "CreativeOtter",
+    version: productVersion,
+  })
+  registerAccountResource(server, appUrl)
   server.registerTool(
     "get_capabilities",
     {
@@ -25,7 +45,7 @@ export const createCreativeOtterMcp = (context: McpContext, appUrl: string) => {
     async () => {
       const data = {
         product: "CreativeOtter",
-        version: "0.1.0",
+        version: productVersion,
         workspace: context.workspace,
         permissions: context.permissions,
         enabled_tools: ["get_capabilities", "manage_account"],
@@ -43,37 +63,29 @@ export const createCreativeOtterMcp = (context: McpContext, appUrl: string) => {
       }
     },
   )
-  server.registerTool(
+  registerAppTool(
+    server,
     "manage_account",
     {
-      title: "CreativeOtter account",
+      title: "Manage account",
       description:
-        "Read your authorized CreativeOtter workspace or integration settings. Does not purchase credits, change settings or approve paid requests. Billing activity is not implemented yet.",
+        "Show the interactive CreativeOtter account panel: connected email, workspace, overview, activity and settings. Use when the user checks their connection or account. Read-only; cannot purchase credits, change settings or approve paid work.",
       inputSchema: {
-        section: z
-          .enum(["overview", "settings", "activity"])
-          .default("overview"),
+        section: accountSectionSchema.default("overview"),
       },
+      outputSchema: accountSnapshotSchema.shape,
       annotations: readOnly,
-      _meta: { securitySchemes },
+      _meta: {
+        securitySchemes,
+        ui: { resourceUri: ACCOUNT_RESOURCE_URI, visibility: ["model", "app"] },
+        "openai/outputTemplate": ACCOUNT_RESOURCE_URI,
+        "openai/widgetAccessible": true,
+        "openai/toolInvocation/invoking": "Opening your CreativeOtter account…",
+        "openai/toolInvocation/invoked": "Opened your CreativeOtter account",
+      },
     },
     async ({ section }) => {
-      const data = {
-        section,
-        user_id: context.user_id,
-        client_id: context.client_id,
-        workspace: context.workspace,
-        role: context.role,
-        permissions: context.permissions,
-        account_url: `${appUrl}/dashboard`,
-        balance: null,
-        billing_status: "not_implemented",
-        generation_mode: "review",
-        message:
-          section === "activity"
-            ? "No billing ledger has been implemented; no charge or refund history is available."
-            : "Connected to your CreativeOtter workspace with read-only account access.",
-      }
+      const data = createAccountSnapshot(context, appUrl, section, email)
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data) }],
         structuredContent: data,

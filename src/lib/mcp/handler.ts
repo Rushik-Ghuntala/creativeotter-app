@@ -56,7 +56,11 @@ export const handleMcpRequest = async (request: Request) => {
     headers.set("Allow", "POST, OPTIONS")
     return new Response(null, { status: 405, headers })
   }
-  const server = createCreativeOtterMcp(context, getAppUrl())
+  const server = createCreativeOtterMcp(
+    context,
+    getAppUrl(),
+    auth.actor.email ?? null,
+  )
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,

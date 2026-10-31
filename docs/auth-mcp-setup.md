@@ -101,3 +101,11 @@ Official references checked during implementation: [Supabase OAuth setup](https:
 ## Verified deployment — 2026-11-01
 
 The production app, callback URL, hosted OAuth server, dynamic registration and access-token hook were configured. Both disposable client protocol fixtures passed DCR, PKCE, resource-bound JWT validation, deployed MCP calls, token refresh and immediate revocation against the same workspace. All fixtures were removed. Real users still complete their own account sign-in and assistant connection.
+
+## Embedded account panel
+
+`manage_account` links to `ui://creativeotter/account-v1.html` using standard MCP Apps UI metadata and the optional OpenAI compatibility alias. The resource is an isolated React bundle with the MCP Apps bridge, no browser API tokens, no direct account-data fetch, and no external fonts/scripts/images. The email comes from the verified OAuth JWT; workspace access is still checked on every HTTP request.
+
+Run `yarn build:ui` after changing `src/components/mcp-account/` or `src/lib/mcp/ui/`. Development, tests and production builds run this step automatically. The generated HTML is ignored by Git and explicitly included in Next.js route tracing. When a released UI bundle changes incompatibly, version its resource URI.
+
+Overview, Activity and Settings render the available account state; unavailable billing/media features are labelled rather than populated with invented balances or history. Refresh calls the same read-only tool through the host bridge, and account links use the host's open-link API. UI-capable hosts can display the panel; tools remain usable as structured data in clients without MCP Apps rendering. Refresh the host's MCP tool catalog or start a fresh chat after deployment.

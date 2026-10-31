@@ -6,6 +6,7 @@ import { safeNextPath } from "@/lib/auth/redirects"
 import { extractBearerToken, verifyMcpToken } from "@/lib/mcp/token"
 import { createCreativeOtterMcp } from "@/lib/mcp/server"
 import { authorizationIdSchema } from "@/lib/oauth/authorization"
+import { ACCOUNT_RESOURCE_URI } from "@/lib/mcp/account-resource"
 import { isSupportedConsentScope } from "@/lib/oauth/scopes"
 
 const issuer = "https://auth.creativeotter.invalid/auth/v1"
@@ -117,6 +118,23 @@ test("stateless MCP tools expose real account context and no paid capabilities",
     tools.result.tools.map((tool: { name: string }) => tool.name).sort(),
     ["get_capabilities", "manage_account"],
   )
+  const descriptor = tools.result.tools.find(
+    (tool: { name: string }) => tool.name === "manage_account",
+  )
+  assert.equal(descriptor._meta.ui.resourceUri, ACCOUNT_RESOURCE_URI)
+  assert.deepEqual(descriptor._meta.ui.visibility, ["model", "app"])
+  assert.equal(descriptor._meta["openai/outputTemplate"], ACCOUNT_RESOURCE_URI)
+  const widget = await call("resources/read", { uri: ACCOUNT_RESOURCE_URI })
+  assert.equal(widget.result.contents[0].mimeType, "text/html;profile=mcp-app")
+  assert.match(
+    widget.result.contents[0].text,
+    /<title>CreativeOtter account<\/title>/,
+  )
+  assert.ok(
+    !widget.result.contents[0].text.includes(subject),
+    "UI template must not bake in account identifiers",
+  )
+  assert.deepEqual(widget.result.contents[0]._meta.ui.csp.connectDomains, [])
   const account = await call("tools/call", {
     name: "manage_account",
     arguments: { section: "overview" },

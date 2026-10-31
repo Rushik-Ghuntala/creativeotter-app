@@ -3,6 +3,7 @@ import { z } from "zod"
 
 const claimsSchema = z.object({
   sub: z.uuid(),
+  email: z.string().optional(),
   client_id: z.string().min(1),
   role: z.literal("authenticated"),
   exp: z.number(),

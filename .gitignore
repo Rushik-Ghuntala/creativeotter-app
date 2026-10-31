@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Public environment template only
 !.env.example
+
+# Generated self-contained MCP UI bundle
+/src/lib/mcp/ui/dist/
