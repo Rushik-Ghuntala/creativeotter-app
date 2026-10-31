@@ -27,7 +27,7 @@ export const ConnectedClient = ({ grant }: ConnectedClientProps) => (
         />
         <p className="mb-3 max-w-xs text-xs leading-5 text-stone-500">
           Enable private media uploads and generation proposals. This
-          application still cannot approve provider charges.
+          application still cannot approve native or API credit charges.
         </p>
         <Button
           type="submit"

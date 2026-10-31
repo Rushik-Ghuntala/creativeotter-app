@@ -112,8 +112,8 @@ const ConsentPage = async ({ searchParams }: ConsentPageProps) => {
               </strong>
               <br />
               Save native images and private references, view media in this
-              workspace and prepare provider quotes. Provider charges still
-              require your direct browser approval.
+              workspace and prepare native or API credit quotes. Both routes
+              require your direct browser credit approval.
             </span>
           </label>
           <Button

@@ -43,7 +43,7 @@ export const AccountSettings = ({
         }
         detail={
           account.permissions.includes("media:prepare")
-            ? "Can save and view private images and prepare quotes. Cannot approve provider charges."
+            ? "Can save and view private images and prepare quotes. Cannot approve native or API credit charges."
             : "Enable media access from your account to save images and prepare quotes."
         }
       />
