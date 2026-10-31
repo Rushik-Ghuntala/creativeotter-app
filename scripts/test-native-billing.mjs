@@ -1,3 +1,4 @@
+import { getImageGallery } from "../src/lib/media/gallery.ts"
 import assert from "node:assert/strict"
 import { randomUUID } from "node:crypto"
 import { readFile } from "node:fs/promises"
@@ -225,6 +226,37 @@ try {
   assert.equal(done.state, "succeeded")
   assert.equal(done.credit_status, "charged")
   assert.equal(done.credit_units, "16000")
+  stage = "read-only saved gallery and tenant isolation"
+  const displayRequest = {
+    title: "Saved fixture",
+    generations: [
+      { generation_id: done.generation_id, execution_source: "native" },
+    ],
+  }
+  const displayBefore = await summary()
+  const gallery = await getImageGallery(a.client, a.id, displayRequest)
+  assert.equal(gallery.items[0].generation_id, done.generation_id)
+  assert.equal(gallery.total_charged_units, "16000")
+  assert.deepEqual(await summary(), displayBefore)
+  await assert.rejects(() => getImageGallery(b.client, b.id, displayRequest))
+  await assert.rejects(() =>
+    getImageGallery(a.client, a.id, {
+      ...displayRequest,
+      generations: [
+        ...displayRequest.generations,
+        ...displayRequest.generations,
+      ],
+    }),
+  )
+  await assert.rejects(() =>
+    getImageGallery(a.client, a.id, {
+      title: "Not saved",
+      generations: [
+        { generation_id: unused.generation_id, execution_source: "native" },
+      ],
+    }),
+  )
+
   assert.deepEqual(
     new Uint8Array(
       await (await fetch(done.outputs[0].download_url)).arrayBuffer(),

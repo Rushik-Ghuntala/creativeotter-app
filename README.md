@@ -59,3 +59,5 @@ Follow `AGENTS.md`, `CLAUDE.md` and `.cursor/rules/`: arrow functions, one compo
 The hosted OAuth test registers two disposable public client fixtures, exchanges PKCE codes, checks authenticated calls on the deployed MCP service, refreshes tokens and verifies immediate grant revocation. It removes its clients and test user. It does not install plugins or sign in to a real Codex/Claude account.
 
 See [credit accounting](docs/credit-accounting.md) for pricing configuration, trusted issuance, settlement, operational limits and test coverage.
+
+Saved carousels and multi-image results use the read-only `show_image_gallery` MCP App tool. It presents ordered thumbnails with per-image Output/Inputs, favorites and downloads through the CreativeOtter viewer; reopening results never generates or charges credits.

@@ -1,3 +1,4 @@
+import { registerGalleryTools } from "@/lib/mcp/gallery-tools"
 import { getCreditSummary } from "@/lib/credits/service"
 import { registerNativeTools, NATIVE_TOOLS } from "@/lib/mcp/native-tools"
 import type { SupabaseClient } from "@supabase/supabase-js"
@@ -17,7 +18,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.6.0"
+const productVersion = "0.7.0"
 
 const readOnly = {
   readOnlyHint: true,
@@ -42,6 +43,7 @@ export const createCreativeOtterMcp = (
   if (client) {
     registerMediaTools(server, client, context, appUrl)
     registerNativeTools(server, client, context)
+    registerGalleryTools(server, client, context)
   }
   server.registerTool(
     "get_capabilities",
@@ -85,12 +87,15 @@ export const createCreativeOtterMcp = (
                 "manage_assets",
               ]
             : []),
+          ...(access?.enabled && access.can_read ? ["show_image_gallery"] : []),
           ...(ready
             ? MEDIA_TOOLS.filter(
                 (name) => !["list_models", "get_model_params"].includes(name),
               )
             : []),
         ],
+        image_gallery: Boolean(access?.enabled && access.can_read),
+        gallery_tool: "show_image_gallery",
         execution_policy: "native_first",
         native_generation: {
           availability: "inspect_host_tools",

@@ -3,6 +3,11 @@ import {
   useApp,
   applyDocumentTheme,
 } from "@modelcontextprotocol/ext-apps/react"
+import { ImageGalleryNavigation } from "@/components/generation/ImageGalleryNavigation"
+import {
+  gallerySnapshotSchema,
+  type GallerySnapshot,
+} from "@/lib/media/gallery-contracts"
 import { GenerationPanel } from "@/components/generation/GenerationPanel"
 import {
   generationSnapshotSchema,
@@ -11,12 +16,24 @@ import {
 } from "@/lib/media/contracts"
 
 export const GenerationApp = () => {
-  const [snapshot, setSnapshot] = useState<GenerationSnapshot | null>(null)
+  const [singleSnapshot, setSnapshot] = useState<GenerationSnapshot | null>(
+    null,
+  )
+  const [gallery, setGallery] = useState<GallerySnapshot | null>(null)
+  const [selected, setSelected] = useState(0)
+  const snapshot = gallery?.items[selected] || singleSnapshot
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState("")
   const active = useRef(false)
   const deadline = useRef(0)
   const accept = (value: unknown) => {
+    const collection = gallerySnapshotSchema.safeParse(value)
+    if (collection.success) {
+      setGallery(collection.data)
+      setSelected((index) => Math.min(index, collection.data.items.length - 1))
+      setNotice("")
+      return
+    }
     const parsed = generationSnapshotSchema.safeParse(value)
     if (!parsed.success) {
       setNotice(
@@ -24,6 +41,7 @@ export const GenerationApp = () => {
       )
       return
     }
+    setGallery(null)
     setSnapshot(parsed.data)
     setNotice("")
   }
@@ -51,12 +69,23 @@ export const GenerationApp = () => {
     setBusy(true)
     try {
       const result = await app.callServerTool(
-        snapshot.execution_source === "native"
+        gallery
           ? {
-              name: "get_native_generation",
-              arguments: { generation_id: snapshot.generation_id },
+              name: "show_image_gallery",
+              arguments: {
+                title: gallery.title,
+                generations: gallery.items.map((item) => ({
+                  generation_id: item.generation_id,
+                  execution_source: item.execution_source,
+                })),
+              },
             }
-          : { name: "check_job", arguments: { quote_id: snapshot.quote_id } },
+          : snapshot.execution_source === "native"
+            ? {
+                name: "get_native_generation",
+                arguments: { generation_id: snapshot.generation_id },
+              }
+            : { name: "check_job", arguments: { quote_id: snapshot.quote_id } },
       )
       if (result.isError)
         setNotice(
@@ -71,7 +100,7 @@ export const GenerationApp = () => {
       active.current = false
       setBusy(false)
     }
-  }, [app, isConnected, snapshot])
+  }, [app, isConnected, snapshot, gallery])
   useEffect(() => {
     if (
       !snapshot ||
@@ -129,13 +158,21 @@ export const GenerationApp = () => {
         setNotice(
           "Couldn’t update this favorite. Check your media permissions.",
         )
-      else
-        setSnapshot({
-          ...snapshot,
-          outputs: snapshot.outputs.map((value) =>
+      else {
+        const update = (item: GenerationSnapshot) => ({
+          ...item,
+          outputs: item.outputs.map((value) =>
             value.id === updated.data.id ? updated.data : value,
           ),
         })
+        if (gallery)
+          setGallery((previous) =>
+            previous
+              ? { ...previous, items: previous.items.map(update) }
+              : previous,
+          )
+        else setSnapshot(update(snapshot))
+      }
     } catch {
       setNotice("Couldn’t update this favorite.")
     } finally {
@@ -157,28 +194,39 @@ export const GenerationApp = () => {
       </main>
     )
   return (
-    <GenerationPanel
-      snapshot={snapshot}
-      busy={busy}
-      notice={
-        notice ||
-        (error
-          ? "Connection interrupted. Reconnect to refresh this result."
-          : "")
-      }
-      canExpand={app
-        ?.getHostContext()
-        ?.availableDisplayModes?.includes("fullscreen")}
-      onRefresh={() => void refresh()}
-      onReview={() => void open(snapshot.job_url || snapshot.review_url)}
-      onDownload={() => void open(snapshot.outputs[0]?.download_url || null)}
-      onFavorite={() => void favorite()}
-      onExpand={() => {
-        void app
-          ?.requestDisplayMode({ mode: "fullscreen" })
-          .catch(() => setNotice("Fullscreen is unavailable in this host."))
-      }}
-      onOpenAsset={(asset) => void open(asset.url)}
-    />
+    <>
+      {gallery && (
+        <ImageGalleryNavigation
+          gallery={gallery}
+          selected={selected}
+          busy={busy}
+          onSelect={setSelected}
+        />
+      )}
+      <GenerationPanel
+        key={snapshot.generation_id}
+        snapshot={snapshot}
+        busy={busy}
+        notice={
+          notice ||
+          (error
+            ? "Connection interrupted. Reconnect to refresh this result."
+            : "")
+        }
+        canExpand={app
+          ?.getHostContext()
+          ?.availableDisplayModes?.includes("fullscreen")}
+        onRefresh={() => void refresh()}
+        onReview={() => void open(snapshot.job_url || snapshot.review_url)}
+        onDownload={() => void open(snapshot.outputs[0]?.download_url || null)}
+        onFavorite={() => void favorite()}
+        onExpand={() => {
+          void app
+            ?.requestDisplayMode({ mode: "fullscreen" })
+            .catch(() => setNotice("Fullscreen is unavailable in this host."))
+        }}
+        onOpenAsset={(asset) => void open(asset.url)}
+      />
+    </>
   )
 }
