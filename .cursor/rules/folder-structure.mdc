@@ -1,0 +1,115 @@
+---
+description: Folder structure and file-naming conventions for src/
+alwaysApply: true
+---
+
+# Folder structure (strict)
+
+Organize `src/` by responsibility. Always import via the `@/*` alias (maps to `src/*` in `tsconfig.json`) — never deep relative paths like `../../../lib/utils`.
+
+## src/ layout
+
+- `app/` — Next.js App Router routes, layouts, and pages only
+- `components/`
+  - `ui/` — generic, reusable primitives (shadcn-style), **kebab-case** files
+  - `common/` — shared, domain-aware components used across features
+  - `<feature>/` — components specific to one feature (e.g. `pricing/`, `hero/`)
+- `sections/` — full-page compositions, one **PascalCase** folder per page
+- `hooks/` — custom React hooks, one per file, `useX` naming
+- `lib/` — utilities, integrations, and cross-cutting shared types
+- `utils/` — small standalone helper functions
+- `store/` — Redux Toolkit: slices, selectors, and types grouped by feature
+- `providers/` — React context providers and app-level setup
+- `constants/` — app-wide constants
+- `data/` — static fixtures / mock data
+- `styles/` — global CSS
+
+## Page composition (routes → sections)
+
+Keep `app/` routes thin. A `page.tsx` should **only** render its top-level page component from
+`sections/` — no markup or logic of its own. Each page gets a **PascalCase** folder in `sections/`
+containing one main component (named after the folder) plus the section components it composes.
+
+```
+src/
+├── app/
+│   └── page.tsx              # only: import + render <HomePage />
+└── sections/
+    └── HomePage/
+        ├── HomePage.tsx      # main page component, composes the sections below
+        ├── HeroSection.tsx
+        ├── FeatureSection.tsx
+        └── ...               # other sections for this page
+```
+
+```tsx
+// src/app/page.tsx
+import HomePage from "@/sections/HomePage/HomePage"
+
+const Page = () => <HomePage />
+
+export default Page
+```
+
+```tsx
+// src/sections/HomePage/HomePage.tsx
+import HeroSection from "./HeroSection"
+import FeatureSection from "./FeatureSection"
+
+const HomePage = () => (
+  <main>
+    <HeroSection />
+    <FeatureSection />
+  </main>
+)
+
+export default HomePage
+```
+
+- The main page component (`HomePage.tsx`) is the single component referenced by `page.tsx`.
+- Break each page into focused `*Section.tsx` components (`HeroSection`, `FeatureSection`, …) that
+  the main page component composes.
+- Section components that are reused across pages belong in `components/common/`; section components
+  specific to one page stay inside that page's `sections/<PageName>/` folder.
+
+## Naming
+
+| Kind | Convention | Example |
+| --- | --- | --- |
+| React components | PascalCase `.tsx` | `PricingCard.tsx` |
+| UI primitives (`ui/`) | kebab-case | `button.tsx`, `scroll-area.tsx` |
+| Hooks | `use` + PascalCase | `useCheckout.ts` |
+| Utilities / helpers | camelCase | `formatPrice.ts` |
+| Redux files | `<feature>.slice.ts`, `<feature>.selectors.ts`, `<feature>.types.ts` | `global.slice.ts` |
+| Props types | `*Props` suffix | `type PricingCardProps = { ... }` |
+
+## One component per file (strict)
+
+Every `.tsx` file must contain **exactly one** React component. Never declare two or more components
+in the same file.
+
+- If a component is built from sub-components (cards, rows, list items, illustrations, chart pieces,
+  etc.), extract **each** sub-component into its own `.tsx` file and import it.
+- Group a section's sub-components in a subfolder beside it, e.g. `sections/landing/features/DashboardCard.tsx`.
+- Non-component code is exempt and should live in non-`.tsx` files (or co-located): types, constants,
+  static data, custom hooks, helper/utility functions, and `cva`/variant definitions.
+- The only component in the file should be the one the file is named after.
+
+```
+// ❌ Bad — Features.tsx defines BentoCard, DashboardCard, AlertsCard, … all in one file
+// ✅ Good
+sections/landing/
+├── Features.tsx              # one component: <Features /> (composes the cards)
+└── features/
+    ├── BentoCard.tsx         # one component
+    ├── DashboardCard.tsx     # one component
+    ├── AlertsCard.tsx        # one component
+    └── featureData.ts        # non-component: helpers, types, static data
+```
+
+## Rules
+
+- **One component per file** (see above) — this is non-negotiable.
+- **Named exports** for reusable components/utilities; **default export** only for page-level routes and `sections/` compositions.
+- Co-locate component-specific types inline near the component; put cross-cutting/shared types in `lib/`.
+- Group new code into the directory that matches its responsibility — do not pile feature logic into `app/`.

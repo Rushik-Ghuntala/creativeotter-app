@@ -1,0 +1,7 @@
+{
+  "!(functions/.eslintrc.js)*.{ts,tsx,js,jsx}": [
+    "yarn tsc",
+    "yarn format:fix",
+    "yarn lint:staged"
+  ]
+}

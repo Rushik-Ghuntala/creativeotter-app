@@ -1,0 +1,43 @@
+---
+description: Supabase migration workflow — forward-only SQL migrations, never edit an applied one
+alwaysApply: true
+---
+
+# Database migrations (strict)
+
+This project uses **Supabase Postgres** accessed through the **Supabase JS client**
+(`@supabase/supabase-js`). There is no ORM. The server-only admin client (service-role key, bypasses
+RLS) lives in `src/lib/supabase.ts`; authorization is handled in app code via **Clerk**, not
+Supabase RLS. Hand-maintained row/insert/update types live in `src/lib/database.types.ts`.
+
+## Required
+
+- **Every schema change ships as a forward-only SQL migration** under `supabase/migrations/`, named
+  with an incrementing numeric prefix and a descriptive name (e.g. `0002_add_profile_username.sql`).
+- Apply migrations via the Supabase Dashboard → SQL Editor, or the Supabase CLI (`supabase db push`).
+- **Never edit, rename, or delete a migration that has already been applied.** Applied migrations are
+  immutable history. To change something, add a **new** migration that moves the state forward.
+- Keep `src/lib/database.types.ts` in sync with the schema (or regenerate it with
+  `supabase gen types typescript` if you adopt the Supabase CLI).
+- Enable Row-Level Security on new tables. Server access uses the service-role key (bypasses RLS), so
+  a table with RLS on and no policies is safe by default.
+
+## Avoid
+
+- ❌ Hand-editing SQL in an already-applied `supabase/migrations/<file>.sql`.
+- ❌ Deleting a migration to "redo" it after it has been applied to any shared database.
+- ❌ Importing `src/lib/supabase.ts` (service-role admin client) into client components — it must stay
+  server-side.
+
+## Prefer
+
+```sql
+-- Made a schema change? Add the next migration, e.g. supabase/migrations/0002_add_profile_username.sql
+alter table public.profiles add column username text unique;
+
+-- Need to undo/adjust an applied change? New migration, forward:
+-- supabase/migrations/0003_drop_profile_username.sql
+alter table public.profiles drop column username;
+```
+
+When in doubt: add a new migration, never touch an old one.

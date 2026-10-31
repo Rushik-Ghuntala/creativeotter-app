@@ -1,0 +1,32 @@
+---
+description: Code quality and optimization conventions for this codebase
+alwaysApply: true
+---
+
+# Code optimization (strict)
+
+## Reuse first
+
+- Search for an existing util, hook, or component before writing a new one.
+- Extract shared logic into `lib/`, `utils/`, or `hooks/` instead of duplicating it.
+- Prefer the `cn()` helper (`@/lib/utils`) for conditional Tailwind class names.
+
+## Keep it lean
+
+- Small, single-purpose functions; prefer early returns over deep nesting.
+- No dead code, unused variables, or unused imports — lint enforces `unused-imports`.
+- No commented-out code blocks; delete them.
+- No `console.*` except `console.warn` / `console.error`; never leave `debugger`.
+
+## Language rules
+
+- Use `const` / `let`, never `var` (`no-var`).
+- Use `===` / `!==`, never `==` / `!=` (`eqeqeq`).
+- Minimize `any` (lint warns on `@typescript-eslint/no-explicit-any`); type things properly.
+- Type component props with a `*Props` type/interface.
+- Import via the `@/*` alias.
+
+## Formatting (Prettier is the source of truth)
+
+- No semicolons, 2-space indent, double quotes, single JSX attribute per line.
+- Don't hand-format — run `yarn format:fix`; lint-staged auto-fixes staged files on commit.

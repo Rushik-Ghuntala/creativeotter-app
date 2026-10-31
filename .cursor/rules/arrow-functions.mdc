@@ -1,0 +1,40 @@
+---
+description: Use arrow functions for components, hooks helpers, and callbacks in TypeScript/React
+alwaysApply: true
+---
+
+# Arrow functions (strict)
+
+In this codebase, **always use arrow function syntax** for new and edited code. Do **not** use `function` declarations unless there is a documented, unavoidable reason (e.g. hoisting required for a specific legacy pattern—and prefer refactoring instead).
+
+## Required
+
+- React components: `export const MyComponent = (props: Props) => { ... }`
+- Local/helper components in the same file: `const Helper = () => { ... }`
+- Hooks and utilities: `export const useFoo = () => { ... }`, `export const formatBar = (x: string) => ...`
+- Callbacks passed to JSX or APIs: `onClick={() => ...}`, `.map((item) => ...)`
+
+## Avoid
+
+```ts
+// ❌ Do not use
+function MyComponent() { ... }
+export function MyComponent() { ... }
+function helper() { ... }
+```
+
+## Prefer
+
+```ts
+// ✅ Use
+const MyComponent = () => { ... }
+export const MyComponent = (props: Props) => { ... }
+const helper = () => { ... }
+```
+
+## Exceptions (rare)
+
+- Generator functions (`function*`) where arrow syntax is invalid
+- Explicit user request to match an existing `function` API in the same file being minimally patched
+
+When in doubt, use arrow functions.
