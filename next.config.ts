@@ -2,7 +2,10 @@ import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
-    "/api/mcp": ["./src/lib/mcp/ui/dist/account.html"],
+    "/api/mcp": [
+      "./src/lib/mcp/ui/dist/account.html",
+      "./src/lib/mcp/ui/dist/generation.html",
+    ],
   },
   headers: async () => [
     {

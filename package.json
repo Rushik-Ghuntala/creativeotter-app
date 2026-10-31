@@ -1,6 +1,6 @@
 {
   "name": "creativeotter-app",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "yarn build:ui && next dev --turbopack",
@@ -13,7 +13,8 @@
     "format": "prettier --check \"**/*.{ts,tsx,js,jsx,mjs,md,mdx,css,yaml,yml}\"",
     "lint:staged": "eslint --fix",
     "format:fix": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,md,mdx,css,yaml,yml}\"",
-    "test": "yarn build:ui && node --import tsx --test tests/*.test.ts",
+    "test": "yarn build:ui && node --conditions=react-server --import tsx --test tests/*.test.ts",
+    "test:media:database": "node --env-file=.env --conditions=react-server --import tsx scripts/test-media-database.mjs",
     "test:database": "node --env-file=.env --import tsx scripts/test-database.ts",
     "db:dry-run": "node scripts/database.mjs dry-run",
     "db:push": "node scripts/database.mjs push",
@@ -31,6 +32,7 @@
     "@supabase/supabase-js": "^2.118.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "image-size": "^2.0.4",
     "jose": "^6.2.14",
     "lucide-react": "^1.22.0",
     "next": "16.2.9",

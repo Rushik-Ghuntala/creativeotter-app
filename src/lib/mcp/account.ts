@@ -14,8 +14,19 @@ export const accountSnapshotSchema = z.object({
   balance: z.null(),
   billing_status: z.literal("not_implemented"),
   generation_mode: z.literal("review"),
-  media_generation: z.literal(false),
-  uploads: z.literal(false),
+  media_generation: z.boolean(),
+  uploads: z.boolean(),
+  native_output_import: z.boolean(),
+  execution_policy: z.literal("native_first"),
+  activity: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      state: z.string(),
+      source: z.enum(["native", "provider"]),
+      created_at: z.string(),
+    }),
+  ),
   message: z.string(),
 })
 
@@ -41,8 +52,11 @@ export const createAccountSnapshot = (
   generation_mode: "review",
   media_generation: false,
   uploads: false,
+  native_output_import: false,
+  execution_policy: "native_first",
+  activity: [],
   message:
     section === "activity"
-      ? "Credit and generation history will appear when billing and media generation become available."
-      : "Connected to your CreativeOtter workspace with read-only account access.",
+      ? "Saved native images and provider requests appear when media library access is enabled. Credit billing is not implemented."
+      : "Connected to your CreativeOtter workspace. Use suitable native host tools first; provider fallback requires configuration and direct approval.",
 })

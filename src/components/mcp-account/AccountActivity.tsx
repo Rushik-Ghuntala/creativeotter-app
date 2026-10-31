@@ -1,6 +1,7 @@
-import { Clock3, Sparkles } from "lucide-react"
+import { Clock3 } from "lucide-react"
+import type { AccountSnapshot } from "@/lib/mcp/account"
 
-export const AccountActivity = () => (
+export const AccountActivity = ({ account }: { account: AccountSnapshot }) => (
   <section
     id="panel-activity"
     role="tabpanel"
@@ -10,30 +11,46 @@ export const AccountActivity = () => (
     <div className="section-heading">
       <div>
         <p className="eyebrow">YOUR CREATIVE HISTORY</p>
-        <h2>A little space for big ideas.</h2>
+        <h2>Made along the way.</h2>
       </div>
-      <span className="soft-badge">Coming soon</span>
+      <Clock3
+        size={24}
+        aria-hidden="true"
+      />
     </div>
-    <div className="empty-state">
-      <span className="empty-icon">
-        <Clock3
-          size={28}
-          strokeWidth={1.5}
-          aria-hidden="true"
-        />
-      </span>
-      <h3>Your next chapter starts here.</h3>
-      <p>
-        When generation and billing launch, your creations, charges and refunds
-        will have a home here.
-      </p>
-      <span className="empty-caption">
-        <Sparkles
-          size={14}
-          aria-hidden="true"
-        />
-        No generation or credit history is available yet.
-      </span>
-    </div>
+    {account.activity.length ? (
+      <div className="account-rows">
+        {account.activity.map((item) => (
+          <div
+            className="account-row"
+            key={item.id}
+          >
+            <div>
+              <p className="eyebrow">
+                {item.source === "native" ? "NATIVE TOOL" : "PROVIDER"}
+              </p>
+              <strong>{item.title}</strong>
+              <p>
+                {item.state.replaceAll("_", " ")} ·{" "}
+                {new Date(item.created_at).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="empty-state">
+        <h3>Your next chapter starts here.</h3>
+        <p>
+          {account.permissions.includes("media:read")
+            ? "No saved image requests yet. Your creations will appear here."
+            : "Enable media access from your account to see your private image history."}
+        </p>
+      </div>
+    )}
+    <p className="empty-caption">
+      Native host usage and provider estimates are separate. Credit billing is
+      not enabled.
+    </p>
   </section>
 )

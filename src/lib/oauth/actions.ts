@@ -44,7 +44,10 @@ export const decideAuthorization = async (form: FormData) => {
       client_name: data.client.name.slice(0, 200),
       redirect_uri: data.redirect_uri,
       workspace_id: workspace.id,
-      permissions: ["account:read"],
+      permissions:
+        form.get("media_access") === "yes"
+          ? ["account:read", "media:read", "media:prepare"]
+          : ["account:read"],
       revoked_at: null,
       updated_at: new Date().toISOString(),
     },

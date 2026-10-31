@@ -17,8 +17,8 @@ export const requireWebSession = async (next = "/dashboard") => {
   return { supabase, user: data.user }
 }
 
-export const getPersonalWorkspace = async () => {
-  const session = await requireWebSession()
+export const getPersonalWorkspace = async (next = "/dashboard") => {
+  const session = await requireWebSession(next)
   const { data, error } = await session.supabase.rpc(
     "ensure_personal_workspace",
   )

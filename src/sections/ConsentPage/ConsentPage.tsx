@@ -75,8 +75,9 @@ const ConsentPage = async ({ searchParams }: ConsentPageProps) => {
         <ul className="mt-6 space-y-3 rounded-2xl bg-stone-50 p-5 text-sm text-stone-700">
           <li>Read your workspace name and enabled capabilities.</li>
           <li>
-            View basic account settings. It cannot generate media, spend
-            credits, change permissions or approve paid work.
+            View basic account settings. Without the optional media access
+            below, it can only read account details. It cannot change
+            permissions or approve paid work.
           </li>
           <li>Sign-in permissions requested: {data.scope || "email"}.</li>
         </ul>
@@ -91,13 +92,30 @@ const ConsentPage = async ({ searchParams }: ConsentPageProps) => {
         </details>
         <form
           action={decideAuthorization}
-          className="mt-8 flex gap-3"
+          className="mt-8 flex flex-wrap gap-3"
         >
           <input
             type="hidden"
             name="authorization_id"
             value={id.data}
           />
+          <label className="mb-4 flex w-full items-start gap-3 rounded-xl border border-stone-200 p-4 text-sm leading-6">
+            <input
+              type="checkbox"
+              name="media_access"
+              value="yes"
+              className="mt-1"
+            />
+            <span>
+              <strong>
+                Also allow media library and generation preparation.
+              </strong>
+              <br />
+              Save native images and private references, view media in this
+              workspace and prepare provider quotes. Provider charges still
+              require your direct browser approval.
+            </span>
+          </label>
           <Button
             name="decision"
             value="deny"
@@ -113,7 +131,7 @@ const ConsentPage = async ({ searchParams }: ConsentPageProps) => {
             type="submit"
             className="flex-1 bg-emerald-950 hover:bg-emerald-900"
           >
-            Allow read-only access
+            Allow selected access
           </Button>
         </form>
         <p className="mt-5 text-xs leading-5 text-stone-500">

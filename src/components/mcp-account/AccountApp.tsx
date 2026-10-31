@@ -211,7 +211,7 @@ export const AccountApp = ({ icon }: AccountAppProps) => {
             onSettings={() => setSection("settings")}
           />
         )}
-        {section === "activity" && <AccountActivity />}
+        {section === "activity" && <AccountActivity account={account} />}
         {section === "settings" && (
           <AccountSettings
             account={account}

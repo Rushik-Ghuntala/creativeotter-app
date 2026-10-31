@@ -36,13 +36,25 @@ export const AccountSettings = ({
       />
       <AccountRow
         label="ASSISTANT ACCESS"
-        value="Read-only account access"
-        detail="Can view your workspace and enabled capabilities."
+        value={
+          account.permissions.includes("media:prepare")
+            ? "Account and media preparation"
+            : "Read-only account access"
+        }
+        detail={
+          account.permissions.includes("media:prepare")
+            ? "Can save and view private images and prepare quotes. Cannot approve provider charges."
+            : "Enable media access from your account to save images and prepare quotes."
+        }
       />
       <AccountRow
         label="GENERATION PREFERENCE"
-        value="Review before generating"
-        detail="Generation and preference changes are coming soon."
+        value="Native first"
+        detail={
+          account.media_generation
+            ? "API image fallback is configured and requires browser review."
+            : "API fallback is unavailable until provider configuration and a budget are enabled."
+        }
       />
       <AccountRow
         label="CONNECTED APPLICATIONS"

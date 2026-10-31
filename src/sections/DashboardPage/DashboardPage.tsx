@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Brand } from "@/components/common/Brand"
 import { Button } from "@/components/ui/button"
 import { ConnectedClient } from "@/components/dashboard/ConnectedClient"
@@ -74,7 +75,10 @@ const DashboardPage = async () => {
               </p>
             </details>
           </section>
-          <section className="rounded-3xl border border-stone-200 bg-white p-7 lg:p-9">
+          <section
+            id="connected-applications"
+            className="rounded-3xl border border-stone-200 bg-white p-7 lg:p-9"
+          >
             <h2 className="text-xl font-semibold">Connected applications</h2>
             <p className="mt-3 text-sm leading-6 text-stone-600">
               Only apps you approve can read this workspace. Connecting an app
@@ -98,13 +102,20 @@ const DashboardPage = async () => {
         </div>
         <section className="mt-6 rounded-2xl border border-stone-200 p-6 text-sm leading-6 text-stone-600">
           <h2 className="font-semibold text-stone-900">
-            Authentication comes first.
+            Native first. Your library, together.
           </h2>
           <p className="mt-1">
-            This first release connects your account and workspace. Media
-            generation, uploads and credit purchases will arrive in later
-            releases; no media tools or charges are enabled here.
+            Use your assistant’s available native tools first. Enable media
+            preparation on a connection to save existing native images and
+            prepare optional provider quotes. Every provider generation requires
+            direct approval. Retail credit purchases are not enabled.
           </p>
+          <Link
+            href="/studio/library"
+            className="mt-4 inline-block font-medium text-emerald-900 underline"
+          >
+            Open your private library
+          </Link>
         </section>
       </main>
     </div>

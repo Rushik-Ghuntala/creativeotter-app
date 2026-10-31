@@ -72,15 +72,23 @@ export const AccountOverview = ({
       />
       <AccountRow
         label="GENERATION PREFERENCE"
-        value="Review before generating"
-        detail="Media generation is coming soon."
+        value="Native first. API fallback by review."
+        detail={
+          account.native_output_import
+            ? "Native images can be saved to your private library."
+            : "Native host tools can create images; enable media access to save them here."
+        }
         action="View settings"
         onAction={onSettings}
       />
       <AccountRow
         label="ACCOUNT ACTIVITY"
         value="Your creative history, all together"
-        detail="Future generations and credit activity will appear here."
+        detail={
+          account.activity.length
+            ? `${account.activity.length} recent image requests in this workspace.`
+            : "Save an image to start your creative history."
+        }
         action="Open activity"
         onAction={onActivity}
       />
@@ -90,7 +98,7 @@ export const AccountOverview = ({
         size={16}
         aria-hidden="true"
       />
-      <span>Read-only connection. Your account stays in your control.</span>
+      <span>Provider charges require your direct browser approval.</span>
       <ArrowRight
         size={14}
         aria-hidden="true"

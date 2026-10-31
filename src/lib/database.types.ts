@@ -1,3 +1,11 @@
+import type {
+  MediaAsset,
+  ImageQuote,
+  ImageJob,
+  GenerationAccess,
+  ImageInput,
+  NativeGeneration,
+} from "@/lib/media/contracts"
 export type Json =
   | string
   | number
@@ -44,6 +52,10 @@ type Table<Row, Insert> = {
 export type Database = {
   public: {
     Tables: {
+      native_generations: Table<NativeGeneration, Partial<NativeGeneration>>
+      media_assets: Table<MediaAsset, Partial<MediaAsset>>
+      generation_quotes: Table<ImageQuote, Partial<ImageQuote>>
+      generation_jobs: Table<ImageJob, Partial<ImageJob>>
       profiles: Table<
         { id: string; display_name: string; created_at: string },
         { id: string; display_name?: string }
@@ -82,6 +94,58 @@ export type Database = {
     }
     Views: { [_ in never]: never }
     Functions: {
+      prepare_native_output: {
+        Args: {
+          target_workspace: string
+          request_key: string
+          native_input: Json
+          host_name: string
+          reported_model: string | null
+          output_mime: string
+        }
+        Returns: NativeGeneration & { storage_path: string; mime_type: string }
+      }
+      complete_native_output: {
+        Args: { target_generation: string; asset_metadata: Json }
+        Returns: NativeGeneration
+      }
+      get_generation_access: {
+        Args: { target_workspace: string }
+        Returns: GenerationAccess
+      }
+      prepare_media_upload: {
+        Args: {
+          target_workspace: string
+          asset_label: string
+          asset_mime: string
+        }
+        Returns: MediaAsset
+      }
+      prepare_image_quote: {
+        Args: {
+          target_workspace: string
+          quote_input: Json
+          request_key: string
+        }
+        Returns: ImageQuote
+      }
+      approve_image_quote: { Args: { target_quote: string }; Returns: ImageJob }
+      set_media_favorite: {
+        Args: { target_asset: string; is_favorite: boolean }
+        Returns: MediaAsset
+      }
+      claim_image_job: {
+        Args: { target_job: string }
+        Returns: (ImageJob & { input: ImageInput; model_key: string }) | null
+      }
+      complete_image_job: {
+        Args: { target_job: string; asset_metadata: Json }
+        Returns: ImageJob
+      }
+      mark_image_job_failure: {
+        Args: { target_job: string; next_state: string; safe_message: string }
+        Returns: undefined
+      }
       ensure_personal_workspace: {
         Args: Record<string, never>
         Returns: Workspace

@@ -12,7 +12,11 @@ Next.js 16 and Supabase authentication/MCP foundation. Uses **Supabase Auth**, p
 - Signature, issuer, expiry, OAuth client and exact MCP audience validation; current membership/grant checks for every MCP request.
 - Forward-only migrations, a resource-binding access-token hook and RLS policies that block cross-workspace access and OAuth grant administration.
 
-Media generation, uploads, billing and paid approvals are not enabled. `manage_account` reports billing as unavailable instead of inventing a zero balance.
+- Native-first routing instructions with private image import, validated reference uploads and a shared image library.
+- Image Output/Inputs MCP App and web viewer, signed downloads, favorites, exact prompts and references.
+- Optional fal.ai Nano Banana 2 fallback with immutable quotes, browser-only approval, a workspace budget, idempotent submission and uncertain-outcome reconciliation.
+
+Native creation uses an actual tool exposed by the host assistant and does not require our provider key. Import is an explicitly enabled private preview. Provider inference stays unavailable until server credentials and a positive workspace budget are configured. Billing and retail credits are not implemented; account balances remain unavailable. Only the image backend workflow is implemented. See [hybrid media setup](docs/hybrid-media.md).
 
 ## Local setup
 
@@ -43,6 +47,7 @@ yarn test
 yarn build
 yarn test:database
 yarn test:oauth
+yarn test:media:database
 ```
 
 The database integration test creates two disposable confirmed test users, sends no emails, checks real password sign-in, workspace isolation, grant restrictions, hook output and immediate revocation, and removes those users and their workspaces afterward. Run against the configured development project only. It does not replace a live OAuth connection test through each assistant.
