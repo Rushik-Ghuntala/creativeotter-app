@@ -77,7 +77,7 @@ const ConsentPage = async ({ searchParams }: ConsentPageProps) => {
           <li>
             View basic account settings. Without the optional media access
             below, it can only read account details. It cannot change
-            permissions or approve paid work.
+            permissions or start generation without media access.
           </li>
           <li>Sign-in permissions requested: {data.scope || "email"}.</li>
         </ul>
@@ -108,12 +108,13 @@ const ConsentPage = async ({ searchParams }: ConsentPageProps) => {
             />
             <span>
               <strong>
-                Also allow media library and generation preparation.
+                Also allow media library and requested generation.
               </strong>
               <br />
-              Save native images and private references, view media in this
-              workspace and prepare native or API credit quotes. Both routes
-              require your direct browser credit approval.
+              Save private images and references and generate images when you
+              request them. Native and API generation automatically spend
+              CreativeOtter credits at the configured price after a balance
+              check; there is no extra browser approval for each image.
             </span>
           </label>
           <Button

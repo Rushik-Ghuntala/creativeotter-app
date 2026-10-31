@@ -4,14 +4,14 @@ One workspace has one wallet shared by web, Codex and Claude. 1000 integer units
 
 ## Native lifecycle
 
-Native quotes snapshot a positive, versioned `native:image` workspace price. Browser approval reserves credits atomically; a one-use claim must succeed before the host tool runs. The approved generation ID and execution token are required to upload/complete output. Valid saved fulfillment settles credits once through the native ledger relation. Unclaimed requests can be cancelled directly in the web account; claimed failures/uncertainty remain reserved until trusted operator confirmation. Client failure reports cannot self-refund. The old unpriced import route is revoked.
+Native quotes snapshot a positive, versioned `native:image` workspace price. For a generation request, the one-use claim atomically reserves credits before the host tool runs, without browser approval. Quotes alone do not reserve or spend credits. The claimed generation ID and execution token are required to upload/complete output. Valid saved fulfillment settles credits once through the native ledger relation. Unclaimed requests can be cancelled directly in the web account; claimed failures/uncertainty remain reserved until trusted operator confirmation. Client failure reports cannot self-refund. The old unpriced import route is revoked.
 
 `credit_ledger` movements reference exactly one provider job or native generation (or neither for issuance). Uniqueness permits only one final charge/release per operation. Both routes lock the same workspace wallet and cannot overspend it. Native execution does not consume provider micro-USD budget; it still consumes customer credits.
 
 ## Provider lifecycle
 
 1. A quote snapshots the workspace/model’s enabled, unexpired `private.workspace_credit_prices` row: credit amount, pricing version and expiry. No debit occurs for a quote.
-2. A direct browser approval checks the existing scope, quote expiry, provider budget and locked credit wallet. In the same database transaction it creates the unique job and reserves its exact credit amount. Insufficient credits abort everything, including job creation and provider-cost reservation.
+2. A direct generation request checks the existing scope, quote expiry, provider budget and locked credit wallet. In the same database transaction it creates the unique job and reserves its exact credit amount. Insufficient credits abort everything, including job creation and provider-cost reservation.
 3. Valid saved fulfillment changes the reservation into one final charge. Completion retries do not charge twice.
 4. A confirmed failed job releases reserved credits once. `needs_reconciliation` and `save_failed` retain their reservation; they do not grant a refund while an operation might still complete. Successful/failed jobs cannot be reopened through the worker.
 
@@ -19,7 +19,7 @@ The append-only `credit_ledger` records grant/reserve/charge/release movements. 
 
 ## Issuance and pricing
 
-No production price, free trial or purchased credits are fabricated. Use the explicit operator pricing command after the owner selects a price; it configures the same standard-image retail price for native and API routes. New and existing wallets start at zero. The operator deliberately configures workspace/model pricing and its expiry before allowing provider quotes. Prices in tests (16 fixture credits) are isolated to disposable workspaces and **are not an approved product price**. Private provider pricing is also verified separately and can expire independently.
+No production price, free trial or purchased credits are fabricated. Use the explicit operator pricing command after the owner selects a price; it configures the same standard-image retail price for native and API routes. New and existing wallets start at zero. The operator deliberately configures workspace/model pricing and its expiry before allowing provider quotes. Test fixture prices remain isolated. The owner has separately approved a temporary production price of 16 credits per standard image for both native and API execution. Private provider pricing is also verified separately and can expire independently.
 
 `record_credit_grant` is service-role-only and accepts a bounded positive unit amount, an external event ID and an audit reason. Concurrent repeats with identical metadata return the existing grant. Reusing the event for another workspace or amount fails. It is not exposed through MCP or a user-accessible server action. A future checkout webhook must validate the payment provider’s signature, event type, actual paid amount/currency, product mapping and ownership before calling it. No browser success-page callback is a valid payment receipt.
 

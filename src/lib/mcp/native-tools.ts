@@ -69,7 +69,7 @@ export const registerNativeTools = (
     {
       title: "Choose generation route",
       description:
-        "Choose native-first or a reviewed API fallback using the current host's actually exposed tools. Native availability is reported by the assistant, not inferred from the backend. Never silently substitute an explicitly requested model, bypass a safety refusal or duplicate an uncertain native generation.",
+        "Choose native-first or a configured API fallback using the current host's actually exposed tools. Native availability is reported by the assistant, not inferred from the backend. Never silently substitute an explicitly requested model, bypass a safety refusal or duplicate an uncertain native generation.",
       inputSchema: {
         operation: z
           .enum([
@@ -115,17 +115,16 @@ export const registerNativeTools = (
           native_credits_required: true,
           execution_authorized: false,
           native_usage:
-            "CreativeOtter credits are required for native work. A route choice is not execution permission: prepare_native_generation, direct browser approval and a successful claim_native_generation must precede the native tool. Host usage may also apply.",
+            "CreativeOtter credits are required for native work. For an explicit user generation request, prepare_native_generation and a successful claim_native_generation that atomically reserves credits must precede the native tool. Host usage may also apply.",
         }
       }),
   )
-  registerAppTool(
-    server,
+  server.registerTool(
     "prepare_native_generation",
     {
-      title: "Review native generation",
+      title: "Prepare native image quote",
       description:
-        "Quote one native image BEFORE invoking any host generation tool. CreativeOtter credits apply even though no backend inference key is used. Requires configured native pricing and media access. Open the returned review URL and wait for direct browser approval, then call claim_native_generation. This tool never invokes generation.",
+        "Quote one native image BEFORE invoking any host generation tool. CreativeOtter credits apply even though no backend inference key is used. Requires configured native pricing and media access. For an explicit generation request, continue immediately to claim_native_generation to reserve credits and start once. Estimate-only requests stop at this quote. This tool never invokes generation.",
       inputSchema: {
         ...nativeInputSchema.shape,
         host: nativeHostSchema,
@@ -137,15 +136,7 @@ export const registerNativeTools = (
       },
       outputSchema: generationSnapshotSchema.shape,
       annotations: { ...readOnly, readOnlyHint: false },
-      _meta: {
-        ...meta,
-        ui: {
-          resourceUri: GENERATION_RESOURCE_URI,
-          visibility: ["model", "app"],
-        },
-        "openai/outputTemplate": GENERATION_RESOURCE_URI,
-        "openai/widgetAccessible": true,
-      },
+      _meta: meta,
     },
     async (args) =>
       safely(() =>
@@ -168,9 +159,9 @@ export const registerNativeTools = (
   server.registerTool(
     "claim_native_generation",
     {
-      title: "Start approved native work",
+      title: "Generate native image",
       description:
-        "Claim an approved native image execution exactly once. Only a successful response with claimed=true authorizes calling the host native generator with the returned fixed inputs. Credits must already be reserved by browser approval. A repeated/lost claim must be reconciled; never generate twice.",
+        "Start a requested native image: atomically reserve its quoted credits and claim execution exactly once, without browser approval. Only a successful response with claimed=true authorizes calling the host native generator with the returned fixed inputs. Requires the original requesting client, current media permission, a valid quote and sufficient credits. A repeated/lost claim must be reconciled; never generate twice.",
       inputSchema: { generation_id: z.uuid() },
       annotations: { ...readOnly, readOnlyHint: false, idempotentHint: false },
       _meta: meta,
@@ -192,7 +183,7 @@ export const registerNativeTools = (
     {
       title: "Upload paid native output",
       description:
-        "Prepare an upload for the image produced by an already-approved and claimed native execution. Requires its generation_id and execution_token. Cannot create a free native request. Transfer the existing output, then complete_native_output; an upload failure does not authorize regeneration.",
+        "Prepare an upload for the image produced by a paid and claimed native execution. Requires its generation_id and execution_token. Cannot create a free native request. Transfer the existing output, then complete_native_output; an upload failure does not authorize regeneration.",
       inputSchema: { generation_id: z.uuid(), execution_token: z.uuid() },
       annotations: { ...readOnly, readOnlyHint: false },
       _meta: meta,

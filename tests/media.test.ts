@@ -31,7 +31,7 @@ test("native-first routing preserves model choice and uncertain results", () => 
     "native",
   )
   assert.equal(route({ native_status: "unknown" }), "inspect_native_tools")
-  assert.equal(route({ native_status: "unavailable" }), "provider_review")
+  assert.equal(route({ native_status: "unavailable" }), "provider")
   assert.equal(route({ native_status: "unavailable" }, false), "unavailable")
   assert.equal(
     route({
@@ -39,7 +39,7 @@ test("native-first routing preserves model choice and uncertain results", () => 
       native_satisfies_request: true,
       requested_model: "specific-provider",
     }),
-    "provider_review",
+    "provider",
   )
   assert.equal(
     route({
@@ -52,7 +52,7 @@ test("native-first routing preserves model choice and uncertain results", () => 
   )
   assert.equal(
     route({ native_status: "available", native_failure: "technical" }),
-    "provider_review",
+    "provider",
   )
   assert.equal(
     route({ native_status: "available", native_failure: "unknown_outcome" }),

@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/database.types"
 import { getAppUrl } from "@/lib/env"
 import { signAsset } from "@/lib/media/assets"
-import { reconcileImageJob } from "@/lib/media/worker"
+import { dispatchImageJob, reconcileImageJob } from "@/lib/media/worker"
 import {
   IMAGE_MODEL,
   imageInputSchema,
@@ -52,7 +52,7 @@ export const prepareImageQuote = async (
     !access.credit_pricing_enabled
   )
     throw new Error(
-      "Provider fallback requires media access, configured credit pricing and an operator-configured provider budget. Native CreativeOtter work also requires its own priced quote and credit approval.",
+      "Provider fallback requires media access, configured credit pricing and an operator-configured provider budget. Native CreativeOtter work also requires its own priced quote and sufficient credits.",
     )
   const input = imageInputSchema.parse(value)
   const { data, error } = await client.rpc("prepare_image_quote", {
@@ -63,6 +63,23 @@ export const prepareImageQuote = async (
   if (error || !data)
     throw new Error(error?.message || "Unable to prepare the generation quote")
   return data
+}
+
+export const startImageGeneration = async (
+  client: SupabaseClient<Database>,
+  workspaceId: string,
+  quoteId: string,
+): Promise<GenerationSnapshot> => {
+  if (!providerConfigured())
+    throw new Error("The image provider is not configured")
+  const result = await client.rpc("start_image_generation", {
+    target_quote: quoteId,
+  })
+  if (result.error || !result.data)
+    throw new Error(result.error?.message || "Unable to start this image")
+  // The database's one-use job claim prevents duplicate provider submissions.
+  await dispatchImageJob(result.data.id)
+  return getGenerationSnapshot(client, workspaceId, quoteId)
 }
 
 export const getGenerationSnapshot = async (
@@ -147,9 +164,9 @@ export const getGenerationSnapshot = async (
       state === "succeeded"
         ? "Image ready and saved in your private CreativeOtter library."
         : state === "awaiting_approval"
-          ? "Review the exact prompt, references and maximum provider cost in CreativeOtter, then approve in your browser. Generation has not started."
+          ? "Quote prepared without spending credits. For a requested image, the assistant can call generate_image immediately; no browser approval is required."
           : state === "expired"
-            ? "This quote expired before approval. Prepare a new quote; nothing was submitted for this quote."
+            ? "This quote expired before generation. Prepare a new quote; nothing was submitted for this quote."
             : "Check this existing request for progress. Do not submit a duplicate generation.",
   }
 }

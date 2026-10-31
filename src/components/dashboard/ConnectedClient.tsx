@@ -14,7 +14,7 @@ export const ConnectedClient = ({ grant }: ConnectedClientProps) => (
       </p>
       <p className="mt-1 text-sm text-stone-600">
         {grant.permissions.includes("media:prepare")
-          ? "Media library and generation preparation"
+          ? "Media library and requested generation"
           : "Read-only workspace access"}
       </p>
     </div>
@@ -26,14 +26,14 @@ export const ConnectedClient = ({ grant }: ConnectedClientProps) => (
           value={grant.client_id}
         />
         <p className="mb-3 max-w-xs text-xs leading-5 text-stone-500">
-          Enable private media uploads and generation proposals. This
-          application still cannot approve native or API credit charges.
+          Enable private media uploads and generation. Images you request spend
+          CreativeOtter credits automatically, using the configured price.
         </p>
         <Button
           type="submit"
           variant="outline"
         >
-          Enable media preparation
+          Enable media generation
         </Button>
       </form>
     )}

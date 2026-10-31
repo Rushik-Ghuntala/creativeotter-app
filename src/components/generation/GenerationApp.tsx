@@ -170,13 +170,7 @@ export const GenerationApp = () => {
         ?.getHostContext()
         ?.availableDisplayModes?.includes("fullscreen")}
       onRefresh={() => void refresh()}
-      onReview={() =>
-        void open(
-          snapshot.state === "awaiting_approval"
-            ? snapshot.review_url
-            : snapshot.job_url,
-        )
-      }
+      onReview={() => void open(snapshot.job_url || snapshot.review_url)}
       onDownload={() => void open(snapshot.outputs[0]?.download_url || null)}
       onFavorite={() => void favorite()}
       onExpand={() => {

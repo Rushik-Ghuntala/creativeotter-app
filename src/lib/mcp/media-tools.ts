@@ -12,6 +12,7 @@ import {
   getMediaAccess,
   prepareImageQuote,
   getGenerationSnapshot,
+  startImageGeneration,
 } from "@/lib/media/service"
 import {
   beginMediaUpload,
@@ -75,7 +76,7 @@ export const registerMediaTools = (
     const state = await access()
     if (!state.enabled || !state.can_read || (prepare && !state.can_prepare))
       throw new Error(
-        `Media access is not enabled for this connection. Open ${appUrl}/dashboard and enable media preparation for this application. It still cannot approve paid generations.`,
+        `Media access is not enabled for this connection. Open ${appUrl}/dashboard and enable media preparation for this application. Requested generation spends the configured CreativeOtter credits.`,
       )
     return state
   }
@@ -141,17 +142,17 @@ export const registerMediaTools = (
         reference_source:
           "ready private CreativeOtter asset IDs; create_upload_url and complete_upload prepare references",
         approval:
-          "estimate_generation prepares a bound quote; generate_image opens the review panel; only an authenticated browser approval can start the job",
+          "estimate_generation prepares a non-spending quote; for an explicit image request generate_image directly reserves credits and starts one job without browser approval",
         pricing:
-          "Obtain the current maximum provider estimate from estimate_generation. The quote binds a versioned credit price; approval reserves that amount from the shared workspace wallet. Purchases are not enabled.",
+          "Obtain the current maximum provider estimate from estimate_generation. The quote binds a versioned credit price; generation reserves that amount from the shared workspace wallet. Purchases are not enabled.",
       })),
   )
   server.registerTool(
     "estimate_generation",
     {
-      title: "Review image generation",
+      title: "Estimate image generation",
       description:
-        "Prepare a bound, expiring quote for exactly one image using owned reference assets. Does not submit to a provider or spend funds. Inputs cannot change after approval.",
+        "Prepare a bound, expiring quote for exactly one image using owned reference assets. Does not submit to a provider or spend funds. Inputs and price are fixed to the quote.",
       inputSchema: {
         operation: z.literal("image").default("image"),
         model: z.literal(IMAGE_MODEL).default(IMAGE_MODEL),
@@ -190,10 +191,10 @@ export const registerMediaTools = (
     {
       title: "Generate image",
       description:
-        "Open the CreativeOtter image panel for an existing bound quote. If awaiting approval, the user must review and approve in the authenticated browser. This tool cannot approve paid work or change quoted inputs. For an approved quote it shows the existing job and private saved output.",
+        "Generate one explicitly requested image from an existing bound quote. Atomically reserve CreativeOtter credits and start the provider job without browser approval, then open its progress/result panel. Requires sufficient credits, current media permission and a configured provider budget. Repeated calls return the same job; never call for an estimate-only request or to add an unrequested take.",
       inputSchema: { quote_id: z.uuid() },
       outputSchema: generationSnapshotSchema.shape,
-      annotations: readOnly,
+      annotations: { ...write, idempotentHint: true, openWorldHint: true },
       _meta: {
         ...meta,
         ui: {
@@ -202,14 +203,14 @@ export const registerMediaTools = (
         },
         "openai/outputTemplate": GENERATION_RESOURCE_URI,
         "openai/widgetAccessible": true,
-        "openai/toolInvocation/invoking": "Opening your image…",
-        "openai/toolInvocation/invoked": "Opened your image",
+        "openai/toolInvocation/invoking": "Generating your image…",
+        "openai/toolInvocation/invoked": "Opened image generation",
       },
     },
     async ({ quote_id }) =>
       safe(async () => {
-        await requireMedia()
-        return await getGenerationSnapshot(
+        await requireMedia(true)
+        return await startImageGeneration(
           client,
           context.workspace.id,
           quote_id,

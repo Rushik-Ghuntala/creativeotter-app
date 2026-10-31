@@ -41,7 +41,7 @@ export const GenerationPanel = ({
   const heading = ready
     ? "Image ready"
     : snapshot.state === "awaiting_approval"
-      ? "Review your image"
+      ? "Image quote"
       : snapshot.state === "awaiting_generation"
         ? "Ready for your assistant"
         : snapshot.state === "cancelled"
@@ -149,7 +149,6 @@ export const GenerationPanel = ({
         {tab === "output" ? (
           <GenerationOutput
             snapshot={snapshot}
-            onReview={onReview}
             onRefresh={onRefresh}
           />
         ) : (
@@ -198,7 +197,7 @@ export const GenerationPanel = ({
             ? snapshot.credit_status === "legacy_no_charge"
               ? "Historical native test from before credit billing. New native requests require a priced credit reservation before generation."
               : "Native generation spends CreativeOtter credits. Host usage may also apply. Credits are reserved before execution and charged after saved delivery."
-            : "Provider credits are reserved on approval and charged after a saved output. Confirmed failures release the reservation; uncertain outcomes stay reserved for review."}
+            : "Provider credits are reserved when generation starts and charged after a saved output. Confirmed failures release the reservation; uncertain outcomes stay reserved for review."}
         </p>
         {snapshot.job_url && (
           <button

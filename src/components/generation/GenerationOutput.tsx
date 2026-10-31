@@ -1,22 +1,14 @@
 /* eslint-disable @next/next/no-img-element -- Signed media preview runs inside an isolated iframe without Next image optimization. */
 import { useState } from "react"
-import {
-  Check,
-  ImageIcon,
-  LoaderCircle,
-  ArrowUpRight,
-  AlertCircle,
-} from "lucide-react"
+import { Check, ImageIcon, LoaderCircle, AlertCircle } from "lucide-react"
 import type { GenerationSnapshot } from "@/lib/media/contracts"
 
 type GenerationOutputProps = {
   snapshot: GenerationSnapshot
-  onReview: () => void
   onRefresh: () => void
 }
 export const GenerationOutput = ({
   snapshot,
-  onReview,
   onRefresh,
 }: GenerationOutputProps) => {
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
@@ -72,7 +64,7 @@ export const GenerationOutput = ({
             {ready
               ? "Refresh your image link"
               : review
-                ? "Your idea is ready to review"
+                ? "Your image quote is ready"
                 : snapshot.state === "awaiting_generation"
                   ? "Ready for your assistant"
                   : snapshot.state === "cancelled"
@@ -90,28 +82,16 @@ export const GenerationOutput = ({
               ? "The stored image link needs refreshing. This opens the saved result without generating again."
               : snapshot.error || snapshot.message}
           </p>
-          {review && snapshot.review_url ? (
-            <button
-              className="gen-primary"
-              onClick={onReview}
-            >
-              Review & approve
-              <ArrowUpRight
-                size={15}
-                aria-hidden="true"
-              />
-            </button>
-          ) : (
-            <button
-              className="gen-secondary"
-              onClick={onRefresh}
-            >
-              Refresh existing result
-            </button>
-          )}
+          <button
+            className="gen-secondary"
+            onClick={onRefresh}
+          >
+            Refresh existing result
+          </button>
           {review && (
             <span className="gen-fine-print">
-              Generation starts only after you approve in CreativeOtter.
+              Your assistant can start this requested image directly. A quote
+              alone spends no credits.
             </span>
           )}
         </div>

@@ -70,8 +70,8 @@ export const AccountActivity = ({ account }: { account: AccountSnapshot }) => (
     )}
     <p className="empty-caption">
       Native host usage and provider estimates are separate. Credits are
-      reserved on approval; confirmed failures release them. Purchases are not
-      enabled.
+      reserved when generation starts; confirmed failures release them.
+      Purchases are not enabled.
     </p>
   </section>
 )

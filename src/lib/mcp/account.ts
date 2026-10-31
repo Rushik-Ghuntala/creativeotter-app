@@ -14,7 +14,7 @@ export const accountSnapshotSchema = z.object({
   account_url: z.url(),
   balance: creditSummarySchema.nullable(),
   billing_status: z.enum(["not_implemented", "credits_ready"]),
-  generation_mode: z.literal("review"),
+  generation_mode: z.literal("direct"),
   media_generation: z.boolean(),
   uploads: z.boolean(),
   native_output_import: z.boolean(),
@@ -50,7 +50,7 @@ export const createAccountSnapshot = (
   account_url: `${appUrl}/dashboard`,
   balance: null,
   billing_status: "not_implemented",
-  generation_mode: "review",
+  generation_mode: "direct",
   media_generation: false,
   uploads: false,
   native_output_import: false,
@@ -59,5 +59,5 @@ export const createAccountSnapshot = (
   message:
     section === "activity"
       ? "Saved native images and provider requests appear when media library access is enabled. Credit purchases are not enabled."
-      : "Connected to your CreativeOtter workspace. Use suitable native host tools first; provider fallback requires configuration and direct approval.",
+      : "Connected to your CreativeOtter workspace. Use suitable native host tools first; provider fallback requires configuration and sufficient credits.",
 })

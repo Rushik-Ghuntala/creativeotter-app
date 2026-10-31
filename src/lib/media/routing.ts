@@ -44,13 +44,13 @@ export const resolveExecutionRoute = (
     return {
       route: "native",
       reason:
-        "Prefer the matching native engine, then obtain a CreativeOtter native credit quote, direct approval and a successful execution claim before invoking it. Host usage may also apply.",
+        "Prefer the matching native engine, then obtain a CreativeOtter native credit quote, a successful execution claim that reserves credits before invoking it. Host usage may also apply.",
     }
   if (providerAvailable)
     return {
-      route: "provider_review",
+      route: "provider",
       reason:
-        "A supported provider fallback is available. Obtain a bound quote and direct browser approval before submitting it.",
+        "A supported provider fallback is available. For a requested image, obtain a bound quote and call generate_image to reserve credits and start directly.",
     }
   return {
     route: "unavailable",

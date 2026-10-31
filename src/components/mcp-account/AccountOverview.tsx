@@ -81,10 +81,10 @@ export const AccountOverview = ({
       />
       <AccountRow
         label="GENERATION PREFERENCE"
-        value="Native first. API fallback by review."
+        value="Native first. Generate on request."
         detail={
           account.native_output_import
-            ? "Native generation requires a credit quote and approval before execution."
+            ? "Requested images start directly after a balance check and credit reservation."
             : "Configure native credit pricing and media access before starting native work."
         }
         action="View settings"
@@ -107,7 +107,10 @@ export const AccountOverview = ({
         size={16}
         aria-hidden="true"
       />
-      <span>Native and API credit charges require your browser approval.</span>
+      <span>
+        Requested native and API images spend CreativeOtter credits
+        automatically.
+      </span>
       <ArrowRight
         size={14}
         aria-hidden="true"

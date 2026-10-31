@@ -17,7 +17,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.5.0"
+const productVersion = "0.6.0"
 
 const readOnly = {
   readOnlyHint: true,
@@ -96,7 +96,7 @@ export const createCreativeOtterMcp = (
           availability: "inspect_host_tools",
           provider_key_required: false,
           instructions:
-            "Native-first selects the engine, not a free tier. Before any native tool invocation through CreativeOtter, require a priced prepare_native_generation quote, direct browser approval, reserved credits and a successful single execution claim. Missing billing must not bypass this flow.",
+            "Native-first selects the engine, not a free tier. Before any native tool invocation through CreativeOtter, require a priced prepare_native_generation quote and a successful single execution claim that reserves credits automatically for the user-requested image. Missing billing must not bypass this flow.",
         },
         provider_image_generation: ready,
         native_output_import: Boolean(
@@ -115,7 +115,7 @@ export const createCreativeOtterMcp = (
         credit_units_per_display_credit: 1000,
         native_credits_required: true,
         native_price_source: "versioned native:image workspace price",
-        generation_mode: "review",
+        generation_mode: "direct",
         default_models: {
           image: "native_if_suitable",
           provider_fallback: ready ? "image/nano-banana-2" : null,
@@ -130,8 +130,8 @@ export const createCreativeOtterMcp = (
           "editing",
         ],
         message: ready
-          ? "Use suitable native tools first. A reviewed provider image fallback is available. Only image provider generation is implemented; other native workflows depend on host tools."
-          : "Use suitable native host tools first; they do not require a CreativeOtter provider key. Native generation requires configured credit pricing, sufficient funds and browser approval before execution. Provider fallback is currently unavailable; it needs provider configuration, workspace budget and direct approval.",
+          ? "Use suitable native tools first. A configured provider image fallback is available. Only image provider generation is implemented; other native workflows depend on host tools."
+          : "Use suitable native host tools first; they do not require a CreativeOtter provider key. Native generation requires configured credit pricing, sufficient funds and a paid execution claim before execution; explicit generation requests need no extra browser approval. Provider fallback is currently unavailable; it needs provider configuration, workspace budget and sufficient credits.",
       }
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data) }],

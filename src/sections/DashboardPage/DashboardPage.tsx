@@ -85,8 +85,8 @@ const DashboardPage = async () => {
           >
             <h2 className="text-xl font-semibold">Connected applications</h2>
             <p className="mt-3 text-sm leading-6 text-stone-600">
-              Only apps you approve can read this workspace. Connecting an app
-              never approves generation charges.
+              Only approved apps can access this workspace. With media access,
+              images you request spend CreativeOtter credits automatically.
             </p>
             {grants.length ? (
               <ul className="mt-6">
@@ -111,9 +111,9 @@ const DashboardPage = async () => {
           <p className="mt-1">
             CreativeOtter prefers available native tools to reduce operating
             cost. Both routes spend your CreativeOtter credits. Enable media
-            preparation on a connection to save existing native images and
-            prepare optional provider quotes. Every native or API generation
-            requires direct credit approval before execution. Retail credit
+            generation on a connection to save images and start requested native
+            or API images directly after a credit balance check. Credits are
+            reserved before execution and charged after saving. Retail credit
             purchases are not enabled.
           </p>
           <Link

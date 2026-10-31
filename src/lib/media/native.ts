@@ -167,7 +167,7 @@ export const getNativeSnapshot = async (
         : native.state
   const message =
     state === "awaiting_approval"
-      ? "Review and approve the exact native image credit price before generation. No native tool may run yet."
+      ? "Quote prepared without spending credits. For a requested image, the assistant can claim execution immediately; no browser approval is required."
       : state === "awaiting_generation"
         ? "Credits are reserved. Your assistant must claim this execution once before calling its native image tool."
         : state === "generating"
@@ -179,7 +179,7 @@ export const getNativeSnapshot = async (
               : state === "cancelled"
                 ? "This unclaimed native request was cancelled. Any credit reservation was released."
                 : state === "expired"
-                  ? "This native quote expired without approval. No credits were reserved."
+                  ? "This native quote expired before generation. No credits were reserved."
                   : state === "failed"
                     ? "Native failure was confirmed. Reserved credits were released."
                     : "The native outcome needs operator reconciliation. Credits remain reserved; do not regenerate or assume a refund."
@@ -202,10 +202,7 @@ export const getNativeSnapshot = async (
       "CreativeOtter credits apply; no backend provider inference",
     pricing_version: null,
     expires_at: native.expires_at,
-    review_url:
-      state === "awaiting_approval"
-        ? `${getAppUrl()}/studio/native/review/${native.id}`
-        : null,
+    review_url: null,
     job_url: `${getAppUrl()}/studio/native/${native.id}`,
     references: input.reference_asset_ids.flatMap((id) =>
       assets.filter((asset) => asset.id === id),

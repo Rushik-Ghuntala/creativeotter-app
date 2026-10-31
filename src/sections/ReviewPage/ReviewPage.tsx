@@ -163,8 +163,8 @@ const ReviewPage = async ({
           </form>
         )}
         <p className="mt-4 text-center text-xs text-stone-400">
-          No generation may start before this approval and its credit
-          reservation.
+          This manual page is optional. Your assistant can start a requested
+          image directly after reserving sufficient credits.
         </p>
       </section>
     </StudioShell>

@@ -146,6 +146,8 @@ test("stateless MCP tools expose real account context and no paid capabilities",
     arguments: {},
   })
   assert.equal(capabilities.result.structuredContent.media_generation, false)
+  assert.equal(capabilities.result.structuredContent.generation_mode, "direct")
+  assert.equal(account.result.structuredContent.generation_mode, "direct")
 })
 
 test("consent accepts opaque hosted authorization IDs and rejects unsafe query values", () => {

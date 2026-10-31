@@ -38,12 +38,12 @@ export const AccountSettings = ({
         label="ASSISTANT ACCESS"
         value={
           account.permissions.includes("media:prepare")
-            ? "Account and media preparation"
+            ? "Account and media generation"
             : "Read-only account access"
         }
         detail={
           account.permissions.includes("media:prepare")
-            ? "Can save and view private images and prepare quotes. Cannot approve native or API credit charges."
+            ? "Can save private images and start requested generations using CreativeOtter credits."
             : "Enable media access from your account to save images and prepare quotes."
         }
       />
@@ -52,8 +52,8 @@ export const AccountSettings = ({
         value="Native first"
         detail={
           account.media_generation
-            ? "API image fallback is configured. Both routes require credit approval."
-            : "Native generation requires configured pricing and credit approval. API fallback also needs provider configuration and a budget."
+            ? "API image fallback is configured. Requested images start directly and spend credits."
+            : "Native generation requires pricing and sufficient credits. API fallback also needs provider configuration and a budget."
         }
       />
       <AccountRow

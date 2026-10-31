@@ -219,6 +219,10 @@ export type Database = {
         }
         Returns: ImageQuote
       }
+      start_image_generation: {
+        Args: { target_quote: string }
+        Returns: ImageJob
+      }
       approve_image_quote: { Args: { target_quote: string }; Returns: ImageJob }
       set_media_favorite: {
         Args: { target_asset: string; is_favorite: boolean }
