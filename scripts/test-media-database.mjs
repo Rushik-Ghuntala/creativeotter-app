@@ -3,11 +3,7 @@ import { randomUUID } from "node:crypto"
 import { readFile } from "node:fs/promises"
 import { createClient } from "@supabase/supabase-js"
 import { createDatabaseConnection } from "./database.mjs"
-import {
-  prepareNativeOutput,
-  finishNativeOutput,
-  getNativeSnapshot,
-} from "../src/lib/media/native.ts"
+import { beginMediaUpload, finishMediaUpload } from "../src/lib/media/assets.ts"
 
 const base = process.env.NEXT_PUBLIC_SUPABASE_URL
 const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -60,124 +56,33 @@ try {
   }
   const [a, b] = fixtures
   const input = {
-    prompt:
-      "Native import validation fixture; not a generated production image",
+    prompt: "Scoped reference fixture",
     aspect_ratio: "1:1",
     resolution: null,
     reference_asset_ids: [],
   }
-  stage = "idempotent native import allocation"
-  const key = randomUUID()
-  const [one, two] = await Promise.all(
-    [0, 1].map(() =>
-      prepareNativeOutput(
-        a.client,
-        a.workspaceId,
-        input,
-        "other",
-        "validation fixture",
-        "image/webp",
-        key,
-      ),
-    ),
-  )
-  assert.equal(one.generation_id, two.generation_id)
-  await assert.rejects(() =>
-    prepareNativeOutput(
-      a.client,
-      a.workspaceId,
-      { ...input, prompt: "Different input" },
-      "other",
-      "validation fixture",
-      "image/webp",
-      key,
-    ),
-  )
-  stage = "cross-workspace isolation"
-  await assert.rejects(() =>
-    getNativeSnapshot(b.client, b.workspaceId, one.generation_id),
-  )
-  const denied = await b.client
-    .from("native_generations")
-    .select("*")
-    .eq("id", one.generation_id)
-  assert.deepEqual(denied.data, [])
-  stage = "pending output is not complete"
-  const before = await getNativeSnapshot(
+  stage = "private reference upload and tenant isolation"
+  const one = await beginMediaUpload(
     a.client,
     a.workspaceId,
-    one.generation_id,
+    "Reference fixture",
+    "image/webp",
   )
-  assert.equal(before.state, "awaiting_upload")
-  assert.equal(before.outputs.length, 0)
-  const noObject = await admin.rpc("complete_native_output", {
-    target_generation: one.generation_id,
-    asset_metadata: { size_bytes: 100, width: 1, height: 1, sha256: "fake" },
-  })
-  assert.ok(noObject.error)
+  paths.push(one.path)
+  const bytes = await readFile("public/creativeotter-widget.webp")
   assert.ok(
     (
-      await a.client.rpc("complete_native_output", {
-        target_generation: one.generation_id,
-        asset_metadata: {},
+      await fetch(one.signed_url, {
+        method: "PUT",
+        headers: { "Content-Type": "image/webp" },
+        body: bytes,
       })
-    ).error,
+    ).ok,
   )
-  stage = "private native upload and validated finalization"
-  const asset = await admin
-    .from("media_assets")
-    .select("*")
-    .eq("id", one.asset_id)
-    .single()
-  paths.push(asset.data.storage_path)
-  const bytes = await readFile("public/creativeotter-widget.webp")
-  const uploaded = await fetch(one.signed_url, {
-    method: "PUT",
-    headers: { "Content-Type": "image/webp" },
-    body: bytes,
-  })
-  assert.ok(uploaded.ok, `Signed upload failed with ${uploaded.status}`)
-  const saved = await finishNativeOutput(
-    a.client,
-    a.workspaceId,
-    one.generation_id,
-  )
-  assert.equal(saved.execution_source, "native")
-  assert.equal(saved.state, "succeeded")
-  assert.equal(saved.outputs.length, 1)
-  assert.equal(saved.max_cost_micro_usd, null)
-  const downloaded = await fetch(saved.outputs[0].url)
-  assert.equal(downloaded.status, 200)
-  assert.deepEqual(
-    new Uint8Array(await downloaded.arrayBuffer()),
-    new Uint8Array(bytes),
-  )
-  const repeated = await finishNativeOutput(
-    a.client,
-    a.workspaceId,
-    one.generation_id,
-  )
-  assert.equal(repeated.outputs[0].id, saved.outputs[0].id)
-  assert.equal(
-    (
-      await a.client
-        .from("media_assets")
-        .update({ status: "ready" })
-        .eq("id", one.asset_id)
-    ).error?.code,
-    "42501",
-  )
-  assert.equal(
-    (
-      await sql`select count(*)::int as count from public.generation_jobs where workspace_id=${a.workspaceId}`
-    )[0].count,
-    0,
-  )
-  assert.equal(
-    (
-      await sql`select count(*)::int as count from private.generation_cost_events e join public.generation_jobs j on j.id=e.job_id where j.workspace_id=${a.workspaceId}`
-    )[0].count,
-    0,
+  const ready = await finishMediaUpload(a.client, a.workspaceId, one.asset_id)
+  assert.equal(ready.id, one.asset_id)
+  await assert.rejects(() =>
+    finishMediaUpload(b.client, b.workspaceId, one.asset_id),
   )
   stage = "provider quote binding and browser-only approval"
   const providerInput = {
@@ -274,7 +179,7 @@ try {
     null,
   )
   process.stdout.write(
-    "Passed: native imports without provider inference, immutable/idempotent requests, private saved output, tenant isolation, scoped permissions, browser-only approval and no automatic provider resubmission.\n",
+    "Passed: scoped reference uploads, immutable/idempotent provider requests, private saved output, tenant isolation, scoped permissions, browser-only approval and no automatic provider resubmission.\n",
   )
 } catch (error) {
   process.stderr.write(

@@ -40,10 +40,13 @@ export const WebGenerationViewer = ({ initial }: WebGenerationViewerProps) => {
   }, [snapshot.generation_id, snapshot.execution_source])
   useEffect(() => {
     if (
-      snapshot.execution_source !== "provider" ||
-      ["succeeded", "failed", "needs_reconciliation", "expired"].includes(
-        snapshot.state,
-      )
+      [
+        "succeeded",
+        "failed",
+        "needs_reconciliation",
+        "expired",
+        "cancelled",
+      ].includes(snapshot.state)
     )
       return
     if (!deadline.current) deadline.current = Date.now() + 20 * 60 * 1000

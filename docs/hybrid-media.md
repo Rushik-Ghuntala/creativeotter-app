@@ -1,40 +1,38 @@
-# Hybrid media: native first
+# Paid hybrid media
 
-The assistant inspects its actual host tools. A suitable native tool wins, including when the provider backend is unavailable. Respect an explicitly requested model. An ambiguous native outcome must be checked before another generation; a safety refusal must not be routed around.
+Prefer an actually available, suitable host-native engine to reduce operating cost. **Both native and API generation spend CreativeOtter credits.** A missing provider key does not imply free customer generation. Planning, account reads and reference uploads are separate from generating a new output.
 
-A skill cannot make a remote MCP server invoke the assistant’s internal image generator. The host executes its native tool; CreativeOtter can then save the exact resulting image. Native usage still follows the host plan and limits. Do not report a provider model name unless the tool actually reports it.
+## Native image execution
 
-## Private native image preview
+1. Inspect actual host tools, finalize exact inputs and upload needed references.
+2. `prepare_native_generation` creates a bound, expiring native credit quote using enabled `native:image` workspace pricing. No zero-price fallback exists.
+3. The user reviews the prompt, references and credit amount at `/studio/native/review/<id>`. Only a direct browser session can approve and atomically reserve sufficient credits.
+4. `claim_native_generation` claims the approved execution once. Only `claimed: true` authorizes one native tool call with its fixed inputs. Save the execution token privately. Lost/duplicate claims need reconciliation rather than another generation.
+5. `create_native_output` authorizes a private upload only with the approved generation ID and execution token. Upload the existing PNG/JPEG/WebP bytes (12 MB, 8192-pixel limit), then `complete_native_output` validates/saves them and settles the reserved credits once.
+6. Failure/uncertainty reported by the client keeps credits reserved. A trusted operator confirms failure before release. Cancellation in the authenticated page releases a reservation only before execution is claimed. Saving can be retried using the same output/token.
 
-Apply the forward migrations with `yarn db:push`. Enable one workspace with:
+The native generator runs in the host, not inside the MCP server. The backend can enforce its priced workflow, claim, storage delivery and credit ledger; it cannot prevent independent host-tool use outside CreativeOtter or attest the actual host/model. The skill must follow the billing sequence. A product needing server-authoritative inference and model attestation should use its provider-backed adapter instead. Do not market the skill as a global host-tool paywall.
+
+Old completed test records retain `legacy_no_charge` status. They are historical records, not a current free tier. The old free import/complete RPC signatures are revoked. Applied migrations remain immutable.
+
+## Activation
+
+`node --env-file=.env scripts/enable-native-preview.mjs <workspace-uuid>` enables the workspace while keeping its provider budget zero. Media access still requires explicit user consent, already granted for the existing Codex connection. It does not waive credit pricing or balance checks.
+
+After the owner chooses a product price, configure the same standard-image price for native and API routes with:
 
 ```sh
-node --env-file=.env scripts/enable-native-preview.mjs <workspace-uuid>
+node --env-file=.env scripts/configure-image-prices.mjs <workspace-uuid> <positive-display-credit-amount>
 ```
 
-This enables native imports with a **zero provider budget**. Existing OAuth grants are unchanged. The user separately clicks **Enable media preparation** for the intended connected application in `/dashboard`, or opts into media access during OAuth consent. That grants `media:read` and `media:prepare`; it does not permit MCP to approve paid jobs.
+This configures versioned retail pricing only. It never grants credits, configures a provider key or increases the provider budget. Prices expire after 30 days and quotes after at most 15 minutes. Existing quotes preserve their bound price. Paid checkout is not implemented; legitimate issuance remains service-only and idempotent.
 
-Native image workflow:
+## API fallback
 
-1. Use the matching host-native tool and preserve its returned file. Saving can fail independently; do not regenerate merely to retry an upload.
-2. `create_native_output` binds the exact prompt, host, reported model (nullable), reference IDs and a stable UUID request key. It returns a signed private PUT URL.
-3. Transfer the existing image bytes with the declared MIME type, then call `complete_native_output`. A validated private output must exist before success.
-4. The MCP App shows Output/Inputs, references, download and favorite. `get_native_generation` renews short-lived private links. `/studio/library` exposes the same workspace library.
+Only one fal.ai Nano Banana 2 image adapter is implemented (one PNG, 1K, up to 14 references). It additionally needs server-only `FAL_KEY`, verified provider pricing and a positive provider micro-USD workspace budget. Never expose provider keys to the client. `estimate_generation` binds the retail credits and maximum provider estimate; direct browser approval creates a unique job and reserves credits. Unknown submissions are not retried automatically. A saved result settles once; confirmed failure releases once.
 
-The first release imports PNG/JPEG/WebP images up to 12 MB and 8192 pixels per side. Host/model provenance is client-reported, not cryptographic attestation. Imports are bounded to 100 per workspace/day. Signed upload URLs are bearer credentials; do not log them. Saved asset URLs expire after an hour and must not be made public.
-
-## Optional provider fallback
-
-The only provider adapter is Nano Banana 2: one PNG, 1K, supported aspect ratios, and up to 14 private ready image references. It is not required for native creation.
-
-To enable paid fallback later, supply server-only `FAL_KEY`, verify/refresh the private pricing row against the provider’s current terms, and deliberately set a positive `private.workspace_generation_limits.daily_budget_micro_usd`. Also configure a versioned `private.workspace_credit_prices` row for the workspace/model and ensure its wallet has legitimately issued credits. A quote binds that price; approval atomically reserves it. Never set a `NEXT_PUBLIC_` provider secret. The pricing row expires after seven days; expired pricing fails closed. The workspace budget is a provider cost cap, not a retail credit balance.
-
-`estimate_generation` binds inputs and a maximum provider estimate to an expiring quote. `generate_image` opens the review panel. Only a direct authenticated browser approval can reserve budget and create its unique job. MCP tokens cannot approve. A lease prevents duplicate dispatch. A timeout or missing acceptance receipt enters `needs_reconciliation` and is never automatically resubmitted. Retry saving an accepted output using its existing receipt.
-
-The private preview reconciles accepted jobs when their status is opened or refreshed; there is no background scheduler or webhook yet. Closing the panel can delay copying a completed provider result into private storage until the next status check. Production rollout needs independent reconciliation, provider failure/refund review and pricing maintenance. Credit reserve/charge/release accounting is implemented; paid credit checkout, video/audio provider adapters, voice cloning and production rendering are not.
+Provider reconciliation occurs on status reads; no background scheduler/webhook is implemented. Video/audio/editing billing adapters, checkout/subscriptions/chargebacks/credit expiry and refunds after completed charges remain outside this release. Unsupported native media routes must not be executed for free through CreativeOtter.
 
 ## Verification
 
-`yarn test` exercises auth/protocol, routing choices, refusal/uncertain-result handling, provider receipt origin/path validation, single-attempt submission and real image validation. `yarn test:media:database` uses disposable isolated users and static image bytes; it validates storage/RLS, zero provider jobs for native imports, exact request binding, idempotency and direct-browser-only paid approval. `yarn test:credits:database` additionally tests concurrent approvals against one wallet, cross-client balance consistency, idempotent trusted issuance, insufficient-credit rejection, finalization and immutable ledger history. It never calls a media provider and removes its fixtures.
-
-A real host-native generation and authenticated MCP import are separate end-to-end checks. A fixture upload is not evidence of AI generation. Claude package validation is not evidence of a live Claude OAuth or native tool test.
+Run `yarn test`, `yarn test:media:database`, `yarn test:credits:database`, and `yarn test:native:database`. The database tests provision isolated disposable users/prices and static image bytes, clean them up and never call a native generator or media provider. Native billing tests cover old-route denial, no unapproved uploads, sufficient funds, browser-only approval, quote binding, concurrent reservations, one-use claims, paid delivery, retry settlement, cancellation, uncertain-result holds and trusted failure release.

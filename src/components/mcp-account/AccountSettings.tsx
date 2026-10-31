@@ -52,8 +52,8 @@ export const AccountSettings = ({
         value="Native first"
         detail={
           account.media_generation
-            ? "API image fallback is configured and requires browser review."
-            : "API fallback is unavailable until provider configuration and a budget are enabled."
+            ? "API image fallback is configured. Both routes require credit approval."
+            : "Native generation requires configured pricing and credit approval. API fallback also needs provider configuration and a budget."
         }
       />
       <AccountRow

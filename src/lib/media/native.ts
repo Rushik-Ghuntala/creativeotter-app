@@ -14,7 +14,7 @@ import {
   type NativeHost,
 } from "@/lib/media/contracts"
 
-export const prepareNativeOutput = async (
+export const prepareNativeGeneration = async (
   client: SupabaseClient<Database>,
   workspaceId: string,
   input: NativeInput,
@@ -23,7 +23,7 @@ export const prepareNativeOutput = async (
   mime: string,
   key: string,
 ) => {
-  const result = await client.rpc("prepare_native_output", {
+  const result = await client.rpc("prepare_native_generation", {
     target_workspace: workspaceId,
     request_key: key,
     native_input: nativeInputSchema.parse(input),
@@ -33,40 +33,62 @@ export const prepareNativeOutput = async (
   })
   if (result.error || !result.data)
     throw new Error(
-      result.error?.message || "Unable to save this native generation",
+      result.error?.message || "Unable to prepare the native generation quote",
     )
-  const generation = result.data
-  if (generation.state === "succeeded")
-    return {
-      generation_id: generation.id,
-      asset_id: generation.asset_id,
-      state: generation.state,
-    }
-  if (generation.state !== "awaiting_upload")
+  return getNativeSnapshot(client, workspaceId, result.data.id)
+}
+export const prepareNativeOutput = async (
+  client: SupabaseClient<Database>,
+  workspaceId: string,
+  generationId: string,
+  token: string,
+) => {
+  const owned = await client
+    .from("native_generations")
+    .select("id")
+    .eq("workspace_id", workspaceId)
+    .eq("id", generationId)
+    .single()
+  if (!owned.data) throw new Error("Native result access denied")
+  const result = await client.rpc("authorize_native_upload", {
+    target_generation: generationId,
+    expected_execution_token: token,
+  })
+  if (result.error || !result.data)
     throw new Error(
-      "This import was rejected. Upload the existing image as a fresh import; do not regenerate it.",
+      result.error?.message || "Native upload requires a paid execution claim",
     )
+  const value = result.data
+  if (value.state === "succeeded") return value
+  if (!value.storage_path || !value.mime_type)
+    throw new Error("Native upload metadata is unavailable")
   const signed = await client.storage
     .from(MEDIA_BUCKET)
-    .createSignedUploadUrl(generation.storage_path)
+    .createSignedUploadUrl(value.storage_path)
   if (signed.error || !signed.data)
-    throw new Error("Unable to prepare native output upload")
+    throw new Error("Unable to prepare native image upload")
   return {
-    generation_id: generation.id,
-    asset_id: generation.asset_id,
-    state: generation.state,
+    generation_id: value.generation_id,
+    asset_id: value.asset_id,
+    state: value.state,
     signed_url: signed.data.signedUrl,
     method: "PUT",
-    content_type: mime,
+    content_type: value.mime_type,
     max_bytes: 12582912,
   }
 }
-
 export const finishNativeOutput = async (
   client: SupabaseClient<Database>,
   workspaceId: string,
   generationId: string,
+  token: string,
 ) => {
+  // Recheck the current user/client grant, reservation and execution token before trusted file access.
+  const authorization = await client.rpc("authorize_native_upload", {
+    target_generation: generationId,
+    expected_execution_token: token,
+  })
+  if (authorization.error) throw new Error(authorization.error.message)
   const { data: native } = await client
     .from("native_generations")
     .select("*")
@@ -74,11 +96,6 @@ export const finishNativeOutput = async (
     .eq("workspace_id", workspaceId)
     .single()
   if (!native) throw new Error("Native result access denied")
-  const access = await client.rpc("get_generation_access", {
-    target_workspace: workspaceId,
-  })
-  if (!access.data?.can_prepare)
-    throw new Error("Media preparation access is required")
   if (native.state === "succeeded")
     return getNativeSnapshot(client, workspaceId, generationId)
   const { data: asset } = await client
@@ -94,11 +111,14 @@ export const finishNativeOutput = async (
     .from(MEDIA_BUCKET)
     .download(asset.storage_path)
   if (file.error || !file.data)
-    throw new Error("The native image has not been uploaded yet")
+    throw new Error(
+      "The native image has not been uploaded yet; save the existing result, do not regenerate",
+    )
   const bytes = new Uint8Array(await file.data.arrayBuffer())
   const dimensions = validateImageBytes(bytes, asset.mime_type)
-  const saved = await admin.rpc("complete_native_output", {
+  const saved = await admin.rpc("complete_paid_native_output", {
     target_generation: generationId,
+    expected_execution_token: token,
     asset_metadata: {
       ...dimensions,
       size_bytes: bytes.length,
@@ -107,11 +127,10 @@ export const finishNativeOutput = async (
   })
   if (saved.error)
     throw new Error(
-      "Unable to finalize this native image; retry saving the existing output",
+      "Unable to finalize the existing native image; its credit reservation remains held",
     )
   return getNativeSnapshot(client, workspaceId, generationId)
 }
-
 export const getNativeSnapshot = async (
   client: SupabaseClient<Database>,
   workspaceId: string,
@@ -125,7 +144,7 @@ export const getNativeSnapshot = async (
     .single()
   if (error || !native)
     throw new Error(
-      "This native generation is unavailable or belongs to another workspace",
+      "Native generation is unavailable or belongs to another workspace",
     )
   const input = nativeInputSchema.parse(native.input)
   const { data: rows } = await client
@@ -137,7 +156,33 @@ export const getNativeSnapshot = async (
   const assets = await Promise.all(
     (rows || []).map((asset) => signAsset(client, asset)),
   )
-  const output = assets.filter((asset) => asset.id === native.asset_id)
+  const outputs = assets.filter((asset) => asset.id === native.asset_id)
+  const state =
+    native.state === "awaiting_approval" &&
+    native.expires_at &&
+    new Date(native.expires_at).getTime() < Date.now()
+      ? "expired"
+      : native.state === "rejected"
+        ? "failed"
+        : native.state
+  const message =
+    state === "awaiting_approval"
+      ? "Review and approve the exact native image credit price before generation. No native tool may run yet."
+      : state === "awaiting_generation"
+        ? "Credits are reserved. Your assistant must claim this execution once before calling its native image tool."
+        : state === "generating"
+          ? "Native execution was claimed. Use this existing attempt; do not start another generation to retry saving."
+          : state === "awaiting_upload"
+            ? "Save the image from the claimed native execution. Credits remain reserved until validated delivery."
+            : state === "succeeded"
+              ? "Native image saved. The displayed billing record is authoritative; host usage limits may also apply."
+              : state === "cancelled"
+                ? "This unclaimed native request was cancelled. Any credit reservation was released."
+                : state === "expired"
+                  ? "This native quote expired without approval. No credits were reserved."
+                  : state === "failed"
+                    ? "Native failure was confirmed. Reserved credits were released."
+                    : "The native outcome needs operator reconciliation. Credits remain reserved; do not regenerate or assume a refund."
   return {
     generation_id: native.id,
     execution_source: "native",
@@ -146,30 +191,27 @@ export const getNativeSnapshot = async (
     model: "native:image",
     model_name: native.reported_model || "Native image generation",
     host_name: native.host_name,
-    state:
-      native.state === "succeeded" && output.length
-        ? "succeeded"
-        : native.state === "rejected"
-          ? "failed"
-          : "awaiting_upload",
+    state,
     input,
     max_cost_micro_usd: null,
-    credit_units: "0",
-    credit_status: "native_no_charge",
-    credit_pricing_version: null,
-    estimated_cost_label: "No CreativeOtter provider charge",
+    credit_units:
+      native.credit_units === null ? "0" : String(native.credit_units),
+    credit_status: native.credit_status,
+    credit_pricing_version: native.credit_pricing_version,
+    estimated_cost_label:
+      "CreativeOtter credits apply; no backend provider inference",
     pricing_version: null,
-    expires_at: null,
-    review_url: null,
+    expires_at: native.expires_at,
+    review_url:
+      state === "awaiting_approval"
+        ? `${getAppUrl()}/studio/native/review/${native.id}`
+        : null,
     job_url: `${getAppUrl()}/studio/native/${native.id}`,
     references: input.reference_asset_ids.flatMap((id) =>
       assets.filter((asset) => asset.id === id),
     ),
-    outputs: output,
-    error: null,
-    message:
-      native.state === "succeeded" && output.length
-        ? "Native assistant image saved in your private CreativeOtter library. Host usage limits may apply."
-        : "Upload the image already produced by the native tool, then finalize this import. Do not generate another image to retry an upload.",
+    outputs: state === "succeeded" ? outputs : [],
+    error: native.public_error,
+    message,
   }
 }

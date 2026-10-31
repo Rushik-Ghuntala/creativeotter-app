@@ -109,10 +109,12 @@ const DashboardPage = async () => {
             Native first. Your library, together.
           </h2>
           <p className="mt-1">
-            Use your assistant’s available native tools first. Enable media
+            CreativeOtter prefers available native tools to reduce operating
+            cost. Both routes spend your CreativeOtter credits. Enable media
             preparation on a connection to save existing native images and
-            prepare optional provider quotes. Every provider generation requires
-            direct approval. Retail credit purchases are not enabled.
+            prepare optional provider quotes. Every native or API generation
+            requires direct credit approval before execution. Retail credit
+            purchases are not enabled.
           </p>
           <Link
             href="/studio/library"

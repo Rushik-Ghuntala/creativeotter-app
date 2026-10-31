@@ -75,7 +75,7 @@ export const AccountOverview = ({
         }
         detail={
           account.balance
-            ? `${formatCreditUnits(account.balance.reserved_units)} reserved · ${formatCreditUnits(account.balance.spent_units)} used. Native images use 0 CreativeOtter credits. Purchases are not enabled.`
+            ? `${formatCreditUnits(account.balance.reserved_units)} reserved · ${formatCreditUnits(account.balance.spent_units)} used. Native and API generations spend CreativeOtter credits. Purchases are not enabled.`
             : "Reconnect to retrieve your actual credit account."
         }
       />
@@ -84,8 +84,8 @@ export const AccountOverview = ({
         value="Native first. API fallback by review."
         detail={
           account.native_output_import
-            ? "Native images can be saved to your private library."
-            : "Native host tools can create images; enable media access to save them here."
+            ? "Native generation requires a credit quote and approval before execution."
+            : "Configure native credit pricing and media access before starting native work."
         }
         action="View settings"
         onAction={onSettings}
@@ -107,7 +107,7 @@ export const AccountOverview = ({
         size={16}
         aria-hidden="true"
       />
-      <span>Provider charges require your direct browser approval.</span>
+      <span>Native and API credit charges require your browser approval.</span>
       <ArrowRight
         size={14}
         aria-hidden="true"

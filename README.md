@@ -16,7 +16,7 @@ Next.js 16 and Supabase authentication/MCP foundation. Uses **Supabase Auth**, p
 - Image Output/Inputs MCP App and web viewer, signed downloads, favorites, exact prompts and references.
 - Optional fal.ai Nano Banana 2 fallback with immutable quotes, browser-only approval, a workspace budget, idempotent submission and uncertain-outcome reconciliation.
 
-Native creation uses an actual tool exposed by the host assistant and does not require our provider key. Import is an explicitly enabled private preview. Provider inference stays unavailable until server credentials and a positive workspace budget are configured. Transactional credit accounting is implemented with actual workspace balances, immutable ledger history and reserve/charge/release handling. Native images use zero CreativeOtter credits. Credit purchases are not enabled; no trial credits are silently issued. Retail pricing must be deliberately configured before provider quotes can be prepared. Only the image backend workflow is implemented. See [hybrid media setup](docs/hybrid-media.md).
+Native creation uses an actual tool exposed by the host assistant and does not require our provider key. Import is an explicitly enabled private preview. Provider inference stays unavailable until server credentials and a positive workspace budget are configured. Transactional credit accounting is implemented with actual workspace balances, immutable ledger history and reserve/charge/release handling. New native and API images both spend CreativeOtter credits. Native-first reduces operating cost, not customer pricing. Native work requires a priced quote, browser approval and a single paid execution claim before the host generator runs. Credit purchases are not enabled; no trial credits are silently issued. Retail pricing and sufficient wallet funds are required for both routes. Missing native pricing or funds fails closed. Only the image backend workflow is implemented. See [hybrid media setup](docs/hybrid-media.md).
 
 ## Local setup
 
@@ -49,6 +49,7 @@ yarn test:database
 yarn test:oauth
 yarn test:media:database
 yarn test:credits:database
+yarn test:native:database
 ```
 
 The database integration test creates two disposable confirmed test users, sends no emails, checks real password sign-in, workspace isolation, grant restrictions, hook output and immediate revocation, and removes those users and their workspaces afterward. Run against the configured development project only. It does not replace a live OAuth connection test through each assistant.

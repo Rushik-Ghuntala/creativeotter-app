@@ -4,29 +4,44 @@ import { getCreditSummary } from "@/lib/credits/service"
 import { z } from "zod"
 import { notFound, redirect } from "next/navigation"
 import { getPersonalWorkspace } from "@/lib/auth/session"
+import { getNativeSnapshot } from "@/lib/media/native"
 import { getGenerationSnapshot } from "@/lib/media/service"
-import { approveImageGeneration } from "@/lib/media/actions"
+import {
+  approveImageGeneration,
+  approveNativeGeneration,
+} from "@/lib/media/actions"
 import { StudioShell } from "@/components/studio/StudioShell"
 import { Button } from "@/components/ui/button"
 
 type ReviewPageProps = {
+  source?: "native" | "provider"
   params: Promise<{ id: string }>
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
-const ReviewPage = async ({ params, searchParams }: ReviewPageProps) => {
+const ReviewPage = async ({
+  params,
+  searchParams,
+  source = "provider",
+}: ReviewPageProps) => {
   const { id } = await params
   if (!z.uuid().safeParse(id).success) notFound()
   const { supabase, workspace } = await getPersonalWorkspace(
-    `/studio/review/${id}`,
+    source === "native"
+      ? `/studio/native/review/${id}`
+      : `/studio/review/${id}`,
   )
-  const snapshot = await getGenerationSnapshot(
-    supabase,
-    workspace.id,
-    id,
-    false,
+  const snapshot = await (
+    source === "native"
+      ? getNativeSnapshot(supabase, workspace.id, id)
+      : getGenerationSnapshot(supabase, workspace.id, id, false)
   ).catch(() => null)
   if (!snapshot) notFound()
-  if (snapshot.job_url) redirect(snapshot.job_url)
+  if (
+    snapshot.job_url &&
+    snapshot.state !== "awaiting_approval" &&
+    snapshot.state !== "expired"
+  )
+    redirect(snapshot.job_url)
   const credits = await getCreditSummary(supabase, workspace.id)
   const sufficient = Boolean(
     credits &&
@@ -38,16 +53,17 @@ const ReviewPage = async ({ params, searchParams }: ReviewPageProps) => {
     <StudioShell>
       <section className="mx-auto max-w-2xl rounded-3xl border border-stone-200 bg-white p-7 shadow-sm sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[.18em] text-emerald-800">
-          Provider fallback · explicit approval
+          {source === "native"
+            ? "Native generation · credit approval"
+            : "Provider fallback · credit approval"}
         </p>
         <h1 className="mt-4 text-3xl font-medium tracking-tight">
           Review this image request.
         </h1>
         <p className="mt-4 text-sm leading-7 text-stone-600">
-          Your assistant prepared one provider-backed image. This request uses
-          the operator’s configured provider account. Native assistant
-          generation does not require this approval or a CreativeOtter provider
-          key.
+          {source === "native"
+            ? "Your assistant will use its native image tool after you approve this CreativeOtter credit price. Native-first reduces operating cost; customer credits still apply. Host usage may also apply."
+            : "Your assistant prepared one API-backed image using our configured provider account. CreativeOtter credits apply to both execution routes."}
         </p>
         <div className="mt-7 rounded-2xl bg-[#eef2e8] p-5">
           <p className="text-xs uppercase tracking-widest text-emerald-800">
@@ -68,9 +84,12 @@ const ReviewPage = async ({ params, searchParams }: ReviewPageProps) => {
           <p className="mt-2 text-xs leading-6 text-stone-500">
             One {snapshot.input.resolution} image · {snapshot.model_name} ·{" "}
             {snapshot.input.aspect_ratio}. Retail credit purchases are not
-            enabled. Provider maximum: {snapshot.estimated_cost_label}. Credit
-            price: {snapshot.credit_pricing_version}. Provider estimate version:{" "}
-            {snapshot.pricing_version}.
+            enabled.{" "}
+            {source === "provider" && (
+              <>Provider maximum: {snapshot.estimated_cost_label}. </>
+            )}
+            Credit price: {snapshot.credit_pricing_version}. Provider estimate
+            version: {snapshot.pricing_version}.
           </p>
         </div>
         <h2 className="mt-7 text-sm font-semibold">Exact prompt</h2>
@@ -96,9 +115,9 @@ const ReviewPage = async ({ params, searchParams }: ReviewPageProps) => {
           </div>
         )}
         <p className="mt-5 text-xs leading-6 text-stone-500">
-          These prompt and reference images will be sent to the configured
-          fal.ai generation service if you approve. Inputs are fixed to this
-          quote. An additional take requires a new quote and approval.
+          {source === "native"
+            ? "Your assistant will use these fixed inputs in its native tool after claiming this approved request. A new take requires a fresh quote and approval."
+            : "These prompt and reference images will be sent to fal.ai if you approve. Inputs are fixed to this quote. A new take requires a fresh quote and approval."}
         </p>
         {query.error && (
           <p
@@ -116,13 +135,21 @@ const ReviewPage = async ({ params, searchParams }: ReviewPageProps) => {
           </p>
         ) : (
           <form
-            action={approveImageGeneration}
+            action={
+              source === "native"
+                ? approveNativeGeneration
+                : approveImageGeneration
+            }
             className="mt-7"
           >
             <input
               type="hidden"
-              name="quote_id"
-              value={snapshot.quote_id || ""}
+              name={source === "native" ? "generation_id" : "quote_id"}
+              value={
+                source === "native"
+                  ? snapshot.generation_id
+                  : snapshot.quote_id || ""
+              }
             />
             <Button
               type="submit"
@@ -136,7 +163,8 @@ const ReviewPage = async ({ params, searchParams }: ReviewPageProps) => {
           </form>
         )}
         <p className="mt-4 text-center text-xs text-stone-400">
-          No provider job is submitted before this approval.
+          No generation may start before this approval and its credit
+          reservation.
         </p>
       </section>
     </StudioShell>

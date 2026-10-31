@@ -6,7 +6,7 @@ import {
 } from "@modelcontextprotocol/ext-apps/server"
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 
-export const ACCOUNT_RESOURCE_URI = "ui://creativeotter/account-v3.html"
+export const ACCOUNT_RESOURCE_URI = "ui://creativeotter/account-v4.html"
 
 export const registerAccountResource = (server: McpServer, appUrl: string) => {
   const ui = {

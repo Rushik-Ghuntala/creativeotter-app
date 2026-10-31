@@ -28,6 +28,7 @@ export const getMediaAccess = async (
       can_prepare: false,
       provider_budget_enabled: false,
       credit_pricing_enabled: false,
+      native_credit_pricing_enabled: false,
       provider_ready: providerConfigured(),
     }
   return { ...data, provider_ready: providerConfigured() }
@@ -51,7 +52,7 @@ export const prepareImageQuote = async (
     !access.credit_pricing_enabled
   )
     throw new Error(
-      "Provider fallback requires media access, configured credit pricing and an operator-configured provider budget. Native host tools remain usable independently.",
+      "Provider fallback requires media access, configured credit pricing and an operator-configured provider budget. Native CreativeOtter work also requires its own priced quote and credit approval.",
     )
   const input = imageInputSchema.parse(value)
   const { data, error } = await client.rpc("prepare_image_quote", {

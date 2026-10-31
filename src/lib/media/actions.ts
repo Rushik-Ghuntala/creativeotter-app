@@ -72,3 +72,25 @@ export const favoriteAsset = async (assetId: string, favorite: boolean) => {
   if (result.error) throw new Error("Unable to update favorite")
   revalidatePath("/studio/library")
 }
+
+export const approveNativeGeneration = async (form: FormData) => {
+  const id = z.uuid().parse(form.get("generation_id"))
+  const { supabase } = await requireWebSession(`/studio/native/review/${id}`)
+  const result = await supabase.rpc("approve_native_generation", {
+    target_generation: id,
+  })
+  if (result.error) redirect(`/studio/native/review/${id}?error=approval`)
+  redirect(`/studio/native/${id}`)
+}
+export const cancelNativeGeneration = async (form: FormData) => {
+  const id = z.uuid().parse(form.get("generation_id"))
+  const { supabase } = await requireWebSession(`/studio/native/${id}`)
+  const result = await supabase.rpc("cancel_native_generation", {
+    target_generation: id,
+  })
+  if (result.error)
+    throw new Error(
+      "This request was claimed or cannot be cancelled; operator reconciliation is required",
+    )
+  redirect(`/studio/native/${id}`)
+}

@@ -23,6 +23,7 @@ export type GenerationAccess = {
   can_prepare: boolean
   provider_budget_enabled: boolean
   credit_pricing_enabled: boolean
+  native_credit_pricing_enabled: boolean
 }
 export type MediaAsset = {
   id: string
@@ -122,7 +123,30 @@ export type NativeGeneration = {
   host_name: NativeHost
   reported_model: string | null
   asset_id: string
-  state: "awaiting_upload" | "succeeded" | "rejected"
+  state:
+    | "awaiting_approval"
+    | "awaiting_generation"
+    | "generating"
+    | "awaiting_upload"
+    | "succeeded"
+    | "rejected"
+    | "needs_reconciliation"
+    | "failed"
+    | "cancelled"
+  credit_units: number | null
+  credit_pricing_version: string | null
+  credit_status:
+    | "legacy_no_charge"
+    | "quoted"
+    | "reserved"
+    | "charged"
+    | "released"
+    | "not_charged"
+  expires_at: string | null
+  approved_at: string | null
+  execution_token: string | null
+  claimed_at: string | null
+  public_error: string | null
   created_at: string
 }
 export const generationSnapshotSchema = z.object({
@@ -137,6 +161,9 @@ export const generationSnapshotSchema = z.object({
     z.literal("awaiting_approval"),
     z.literal("awaiting_upload"),
     z.literal("expired"),
+    z.literal("awaiting_generation"),
+    z.literal("generating"),
+    z.literal("cancelled"),
     jobStateSchema,
   ]),
   input: nativeInputSchema,
@@ -149,7 +176,8 @@ export const generationSnapshotSchema = z.object({
       "reserved",
       "charged",
       "released",
-      "native_no_charge",
+      "legacy_no_charge",
+      "not_charged",
     ])
     .nullable()
     .default(null),

@@ -44,7 +44,7 @@ export const resolveExecutionRoute = (
     return {
       route: "native",
       reason:
-        "Use the matching native host tool. CreativeOtter will not submit a provider request; host usage limits may apply.",
+        "Prefer the matching native engine, then obtain a CreativeOtter native credit quote, direct approval and a successful execution claim before invoking it. Host usage may also apply.",
     }
   if (providerAvailable)
     return {

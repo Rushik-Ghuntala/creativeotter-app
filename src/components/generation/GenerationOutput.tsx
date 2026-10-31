@@ -24,9 +24,12 @@ export const GenerationOutput = ({
   const ready = snapshot.state === "succeeded" && Boolean(output)
   const review = snapshot.state === "awaiting_approval"
   const saving = snapshot.state === "saving" || snapshot.state === "save_failed"
-  const problem = ["failed", "needs_reconciliation", "expired"].includes(
-    snapshot.state,
-  )
+  const problem = [
+    "failed",
+    "needs_reconciliation",
+    "expired",
+    "cancelled",
+  ].includes(snapshot.state)
   return (
     <section
       id="generation-output"
@@ -70,13 +73,17 @@ export const GenerationOutput = ({
               ? "Refresh your image link"
               : review
                 ? "Your idea is ready to review"
-                : snapshot.state === "awaiting_upload"
-                  ? "Save your native image"
-                  : problem
-                    ? "This request needs attention"
-                    : saving
-                      ? "Saving your image"
-                      : "Creating your image"}
+                : snapshot.state === "awaiting_generation"
+                  ? "Ready for your assistant"
+                  : snapshot.state === "cancelled"
+                    ? "Request cancelled"
+                    : snapshot.state === "awaiting_upload"
+                      ? "Save your native image"
+                      : problem
+                        ? "This request needs attention"
+                        : saving
+                          ? "Saving your image"
+                          : "Creating your image"}
           </h2>
           <p>
             {ready

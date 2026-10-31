@@ -66,6 +66,7 @@ export type Database = {
           id: string
           workspace_id: string
           job_id: string | null
+          native_generation_id: string | null
           kind: "grant" | "reserve" | "charge" | "release"
           amount_units: number
           delta_available: number
@@ -142,6 +143,61 @@ export type Database = {
       complete_native_output: {
         Args: { target_generation: string; asset_metadata: Json }
         Returns: NativeGeneration
+      }
+      prepare_native_generation: {
+        Args: Database["public"]["Functions"]["prepare_native_output"]["Args"]
+        Returns: NativeGeneration
+      }
+      approve_native_generation: {
+        Args: { target_generation: string }
+        Returns: NativeGeneration
+      }
+      claim_native_generation: {
+        Args: { target_generation: string }
+        Returns: {
+          generation_id: string
+          execution_token: string
+          input: Json
+          host: string
+          reported_model: string | null
+          credit_units: string
+          credit_status: string
+          claimed: boolean
+        }
+      }
+      authorize_native_upload: {
+        Args: { target_generation: string; expected_execution_token: string }
+        Returns: {
+          generation_id: string
+          asset_id: string
+          state: string
+          storage_path?: string
+          mime_type?: string
+        }
+      }
+      complete_paid_native_output: {
+        Args: {
+          target_generation: string
+          expected_execution_token: string
+          asset_metadata: Json
+        }
+        Returns: NativeGeneration
+      }
+      report_native_outcome: {
+        Args: {
+          target_generation: string
+          expected_execution_token: string
+          detail: string
+        }
+        Returns: undefined
+      }
+      cancel_native_generation: {
+        Args: { target_generation: string }
+        Returns: undefined
+      }
+      confirm_native_failure: {
+        Args: { target_generation: string; reason: string }
+        Returns: undefined
       }
       get_generation_access: {
         Args: { target_workspace: string }

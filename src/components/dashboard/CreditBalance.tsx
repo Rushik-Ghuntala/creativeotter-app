@@ -16,9 +16,9 @@ export const CreditBalance = ({ summary }: CreditBalanceProps) => (
       {summary
         ? `${formatCreditUnits(summary.reserved_units)} reserved · ${formatCreditUnits(summary.spent_units)} used. `
         : "Refresh to retrieve your actual credit account. "}
-      Native images use 0 CreativeOtter credits. API generation reserves credits
-      before starting and charges after delivery. Credit purchases are not
-      enabled.
+      Native and API generation both spend CreativeOtter credits. Each request
+      reserves credits before starting and charges after delivery. Credit
+      purchases are not enabled.
     </p>
   </section>
 )

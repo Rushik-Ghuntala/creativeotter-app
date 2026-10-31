@@ -1,6 +1,12 @@
 # Credit accounting
 
-One workspace has one wallet shared by web, Codex and Claude. 1000 integer units represent one display credit; RPC amounts are decimal strings. Provider micro-USD budgets and retail credit balances are separate. Native image generation/import uses **0 CreativeOtter credits**; host usage limits can still apply. Native success creates a media/history record, not a provider job or a credit debit.
+One workspace has one wallet shared by web, Codex and Claude. 1000 integer units represent one display credit; RPC amounts are decimal strings. Provider micro-USD budgets and retail credit balances are separate. New native and API image generation both spend CreativeOtter credits. Native-first changes operating cost, not the need for customer credit authorization. Existing legacy test images retain their original billing history without retroactive charges.
+
+## Native lifecycle
+
+Native quotes snapshot a positive, versioned `native:image` workspace price. Browser approval reserves credits atomically; a one-use claim must succeed before the host tool runs. The approved generation ID and execution token are required to upload/complete output. Valid saved fulfillment settles credits once through the native ledger relation. Unclaimed requests can be cancelled directly in the web account; claimed failures/uncertainty remain reserved until trusted operator confirmation. Client failure reports cannot self-refund. The old unpriced import route is revoked.
+
+`credit_ledger` movements reference exactly one provider job or native generation (or neither for issuance). Uniqueness permits only one final charge/release per operation. Both routes lock the same workspace wallet and cannot overspend it. Native execution does not consume provider micro-USD budget; it still consumes customer credits.
 
 ## Provider lifecycle
 
@@ -9,11 +15,11 @@ One workspace has one wallet shared by web, Codex and Claude. 1000 integer units
 3. Valid saved fulfillment changes the reservation into one final charge. Completion retries do not charge twice.
 4. A confirmed failed job releases reserved credits once. `needs_reconciliation` and `save_failed` retain their reservation; they do not grant a refund while an operation might still complete. Successful/failed jobs cannot be reopened through the worker.
 
-The append-only `credit_ledger` records grant/reserve/charge/release movements. A unique finalization index prevents both charge and release for one job. API clients have read-only table privileges; trigger functions perform atomic wallet changes. Ledger updates/direct deletes are rejected, except cascading workspace deletion. Native imports do not depend on a positive credit balance.
+The append-only `credit_ledger` records grant/reserve/charge/release movements. A unique finalization index prevents both charge and release for one job. API clients have read-only table privileges; trigger functions perform atomic wallet changes. Ledger updates/direct deletes are rejected, except cascading workspace deletion. Native execution requires sufficient credits before its claim.
 
 ## Issuance and pricing
 
-No production price, free trial or purchased credits are fabricated. New and existing wallets start at zero. The operator deliberately configures workspace/model pricing and its expiry before allowing provider quotes. Prices in tests (16 fixture credits) are isolated to disposable workspaces and **are not an approved product price**. Private provider pricing is also verified separately and can expire independently.
+No production price, free trial or purchased credits are fabricated. Use the explicit operator pricing command after the owner selects a price; it configures the same standard-image retail price for native and API routes. New and existing wallets start at zero. The operator deliberately configures workspace/model pricing and its expiry before allowing provider quotes. Prices in tests (16 fixture credits) are isolated to disposable workspaces and **are not an approved product price**. Private provider pricing is also verified separately and can expire independently.
 
 `record_credit_grant` is service-role-only and accepts a bounded positive unit amount, an external event ID and an audit reason. Concurrent repeats with identical metadata return the existing grant. Reusing the event for another workspace or amount fails. It is not exposed through MCP or a user-accessible server action. A future checkout webhook must validate the payment provider’s signature, event type, actual paid amount/currency, product mapping and ownership before calling it. No browser success-page callback is a valid payment receipt.
 
@@ -22,3 +28,5 @@ No production price, free trial or purchased credits are fabricated. New and exi
 ## Validation
 
 `yarn test:credits:database` uses two disposable users/workspaces and scoped fixture prices. It checks zero initial balances; tenant isolation; denied client issuance/mutations; idempotent concurrent grants; fixed quote prices; competing approvals when only one can be afforded; one reservation per approved job; the same wallet visible through Codex/Claude client claims; single release on confirmed failure; holds on uncertain/save failures; no completion before a stored output; one final charge; late failure notifications; ledger/account sums; and ledger immutability. All test media, users and credit rows are removed. No media-provider inference or payment request is made.
+
+`yarn test:native:database` separately validates the paid native workflow, including no free-route/upload bypass, concurrent approval, exact single claim, confirmed delivery, retry deduplication, cancellation and reconciliation. Static test images are not live native inference.

@@ -17,7 +17,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.4.0"
+const productVersion = "0.5.0"
 
 const readOnly = {
   readOnlyHint: true,
@@ -77,7 +77,9 @@ export const createCreativeOtterMcp = (
             : []),
           ...(access?.enabled && access.can_prepare
             ? [
-                ...NATIVE_TOOLS,
+                ...(access.native_credit_pricing_enabled
+                  ? NATIVE_TOOLS
+                  : ["get_native_generation"]),
                 "create_upload_url",
                 "complete_upload",
                 "manage_assets",
@@ -94,17 +96,25 @@ export const createCreativeOtterMcp = (
           availability: "inspect_host_tools",
           provider_key_required: false,
           instructions:
-            "Use a suitable actual native host tool first. Native generation can proceed when the library connection is unavailable; saving then remains optional.",
+            "Native-first selects the engine, not a free tier. Before any native tool invocation through CreativeOtter, require a priced prepare_native_generation quote, direct browser approval, reserved credits and a successful single execution claim. Missing billing must not bypass this flow.",
         },
         provider_image_generation: ready,
-        native_output_import: Boolean(access?.enabled && access.can_prepare),
+        native_output_import: Boolean(
+          access?.enabled &&
+          access.can_prepare &&
+          access.native_credit_pricing_enabled,
+        ),
+        native_credit_pricing_enabled: Boolean(
+          access?.native_credit_pricing_enabled,
+        ),
         media_generation: ready,
         uploads: Boolean(access?.enabled && access.can_prepare),
         billing: false,
         credit_accounting: Boolean(client),
         credit_purchases: false,
         credit_units_per_display_credit: 1000,
-        native_image_credit_units: "0",
+        native_credits_required: true,
+        native_price_source: "versioned native:image workspace price",
         generation_mode: "review",
         default_models: {
           image: "native_if_suitable",
@@ -121,7 +131,7 @@ export const createCreativeOtterMcp = (
         ],
         message: ready
           ? "Use suitable native tools first. A reviewed provider image fallback is available. Only image provider generation is implemented; other native workflows depend on host tools."
-          : "Use suitable native host tools first; they do not require a CreativeOtter provider key. Saving native images requires media permissions. Provider fallback is currently unavailable; it needs provider configuration, workspace budget and direct approval.",
+          : "Use suitable native host tools first; they do not require a CreativeOtter provider key. Native generation requires configured credit pricing, sufficient funds and browser approval before execution. Provider fallback is currently unavailable; it needs provider configuration, workspace budget and direct approval.",
       }
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data) }],
@@ -156,8 +166,11 @@ export const createCreativeOtterMcp = (
         data.balance = await getCreditSummary(client, context.workspace.id)
         if (data.balance) data.billing_status = "credits_ready"
         const access = await getMediaAccess(client, context.workspace.id)
-        data.native_output_import = access.enabled && access.can_prepare
-        data.uploads = data.native_output_import
+        data.native_output_import =
+          access.enabled &&
+          access.can_prepare &&
+          access.native_credit_pricing_enabled
+        data.uploads = access.enabled && access.can_prepare
         data.media_generation = Boolean(
           data.uploads &&
           access.provider_ready &&

@@ -42,17 +42,24 @@ export const GenerationPanel = ({
     ? "Image ready"
     : snapshot.state === "awaiting_approval"
       ? "Review your image"
-      : snapshot.state === "awaiting_upload"
-        ? "Save your image"
-        : snapshot.state === "saving"
-          ? "Saving your image"
-          : ["failed", "needs_reconciliation", "expired"].includes(
-                snapshot.state,
-              )
-            ? "Image needs attention"
-            : "Generating your image"
+      : snapshot.state === "awaiting_generation"
+        ? "Ready for your assistant"
+        : snapshot.state === "cancelled"
+          ? "Request cancelled"
+          : snapshot.state === "awaiting_upload"
+            ? "Save your image"
+            : snapshot.state === "saving"
+              ? "Saving your image"
+              : ["failed", "needs_reconciliation", "expired"].includes(
+                    snapshot.state,
+                  )
+                ? "Image needs attention"
+                : "Generating your image"
   return (
-    <main className="generation-shell">
+    <section
+      className="generation-shell"
+      aria-label="CreativeOtter image"
+    >
       <header className="gen-header">
         <div>
           <p className="gen-brand">
@@ -63,10 +70,10 @@ export const GenerationPanel = ({
             <span>{snapshot.model_name}</span>
             <span className="gen-separator">·</span>
             <strong>
-              {snapshot.execution_source === "native"
-                ? "Native tool · 0 credits"
+              {snapshot.credit_status === "legacy_no_charge"
+                ? "Historical record · no credits charged"
                 : snapshot.credit_units
-                  ? `${formatCreditUnits(snapshot.credit_units)} credits${snapshot.credit_status === "reserved" ? " reserved" : snapshot.credit_status === "charged" ? " charged" : snapshot.credit_status === "released" ? " released" : " quoted"}`
+                  ? `${formatCreditUnits(snapshot.credit_units)} credits ${snapshot.credit_status === "reserved" ? "reserved" : snapshot.credit_status === "charged" ? "charged" : snapshot.credit_status === "released" ? "released" : snapshot.credit_status === "not_charged" ? "not charged" : "quoted"}`
                   : "Credit price unavailable"}
             </strong>
           </p>
@@ -188,7 +195,9 @@ export const GenerationPanel = ({
       <footer className="gen-footer">
         <p>
           {snapshot.execution_source === "native"
-            ? "0 CreativeOtter credits. Made with your assistant’s native tool; host usage limits may apply."
+            ? snapshot.credit_status === "legacy_no_charge"
+              ? "Historical native test from before credit billing. New native requests require a priced credit reservation before generation."
+              : "Native generation spends CreativeOtter credits. Host usage may also apply. Credits are reserved before execution and charged after saved delivery."
             : "Provider credits are reserved on approval and charged after a saved output. Confirmed failures release the reservation; uncertain outcomes stay reserved for review."}
         </p>
         {snapshot.job_url && (
@@ -204,6 +213,6 @@ export const GenerationPanel = ({
           </button>
         )}
       </footer>
-    </main>
+    </section>
   )
 }
