@@ -1,10 +1,12 @@
 import "server-only"
+import { getAppUrl } from "@/lib/env"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/database.types"
 import { getNativeSnapshot } from "@/lib/media/native"
 import { getGenerationSnapshot } from "@/lib/media/service"
 import {
   galleryRequestSchema,
+  buildGalleryUrl,
   type GalleryRequest,
   type GallerySnapshot,
 } from "@/lib/media/gallery-contracts"
@@ -38,6 +40,7 @@ export const getImageGallery = async (
   )
   return {
     view: "gallery",
+    gallery_url: buildGalleryUrl(getAppUrl(), input),
     title: input.title,
     items,
     total_charged_units: total.toString(),

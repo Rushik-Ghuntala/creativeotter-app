@@ -18,7 +18,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.7.0"
+const productVersion = "0.7.1"
 
 const readOnly = {
   readOnlyHint: true,
@@ -96,6 +96,9 @@ export const createCreativeOtterMcp = (
         ],
         image_gallery: Boolean(access?.enabled && access.can_read),
         gallery_tool: "show_image_gallery",
+        gallery_endpoint: `${appUrl}/studio/gallery`,
+        gallery_fallback:
+          "If show_image_gallery is absent from this chat's tool catalog, link the authenticated gallery_endpoint with items=source:generation_id,... in the exact requested order and title=... . Use only the saved IDs from the requested set. This shows the CreativeOtter gallery without regeneration. Refresh the MCP connection to discover the embedded gallery tool.",
         execution_policy: "native_first",
         native_generation: {
           availability: "inspect_host_tools",

@@ -18,34 +18,43 @@ export const registerGenerationResource = (
     domain: appUrl,
     csp: { connectDomains: [], resourceDomains: [storageOrigin] },
   }
-  registerAppResource(
-    server,
-    "CreativeOtter image",
+  // Older conversations can retain these URIs in their tool descriptors.
+  for (const uri of [
     GENERATION_RESOURCE_URI,
-    { _meta: { ui } },
-    async () => ({
-      contents: [
-        {
-          uri: GENERATION_RESOURCE_URI,
-          mimeType: RESOURCE_MIME_TYPE,
-          text: await readFile(
-            join(process.cwd(), "src/lib/mcp/ui/dist/generation.html"),
-            "utf8",
-          ),
-          _meta: {
-            ui,
-            "openai/widgetDescription":
-              "CreativeOtter image generation with live status, exact inputs, private reference previews, saved output and download. Multiple saved images use a branded thumbnail gallery with per-image inputs, save and download. Opening a gallery does not generate or charge credits. The widget does not approve charges. Keep prose brief and describe the actual state; do not say ready before a saved output exists.",
-            "openai/widgetPrefersBorder": false,
-            "openai/widgetDomain": appUrl,
-            "openai/widgetCSP": {
-              connect_domains: [],
-              resource_domains: [storageOrigin],
-              redirect_domains: [appUrl, storageOrigin],
+    ...[1, 2, 3, 4].map(
+      (version) => `ui://creativeotter/generation-v${version}.html`,
+    ),
+    "ui://creativeotter/generation.html",
+  ]) {
+    registerAppResource(
+      server,
+      `CreativeOtter image ${uri}`,
+      uri,
+      { _meta: { ui } },
+      async () => ({
+        contents: [
+          {
+            uri,
+            mimeType: RESOURCE_MIME_TYPE,
+            text: await readFile(
+              join(process.cwd(), "src/lib/mcp/ui/dist/generation.html"),
+              "utf8",
+            ),
+            _meta: {
+              ui,
+              "openai/widgetDescription":
+                "CreativeOtter image generation with live status, exact inputs, private reference previews, saved output and download. Multiple saved images use a branded thumbnail gallery with per-image inputs, save and download. Opening a gallery does not generate or charge credits. The widget does not approve charges. Keep prose brief and describe the actual state; do not say ready before a saved output exists.",
+              "openai/widgetPrefersBorder": false,
+              "openai/widgetDomain": appUrl,
+              "openai/widgetCSP": {
+                connect_domains: [],
+                resource_domains: [storageOrigin],
+                redirect_domains: [appUrl, storageOrigin],
+              },
             },
           },
-        },
-      ],
-    }),
-  )
+        ],
+      }),
+    )
+  }
 }

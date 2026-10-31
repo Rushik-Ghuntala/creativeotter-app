@@ -201,6 +201,7 @@ export const GenerationApp = () => {
           selected={selected}
           busy={busy}
           onSelect={setSelected}
+          onOpenGallery={() => void open(gallery.gallery_url || null)}
         />
       )}
       <GenerationPanel

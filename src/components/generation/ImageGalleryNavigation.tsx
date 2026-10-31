@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- Private signed thumbnails in the isolated MCP viewer. */
 import { useEffect, useRef } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react"
 import { formatCreditUnits } from "@/lib/credits/contracts"
 import type { GallerySnapshot } from "@/lib/media/gallery-contracts"
 
@@ -9,12 +9,14 @@ type ImageGalleryNavigationProps = {
   selected: number
   busy: boolean
   onSelect: (index: number) => void
+  onOpenGallery?: () => void
 }
 export const ImageGalleryNavigation = ({
   gallery,
   selected,
   busy,
   onSelect,
+  onOpenGallery,
 }: ImageGalleryNavigationProps) => {
   const thumbnails = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -109,6 +111,14 @@ export const ImageGalleryNavigation = ({
         </button>
       </div>
       <p className="gen-gallery-note">{gallery.message}</p>
+      {onOpenGallery && gallery.gallery_url && (
+        <button
+          className="gen-text-button"
+          onClick={onOpenGallery}
+        >
+          Open gallery in CreativeOtter <ArrowUpRight size={13} />
+        </button>
+      )}
     </section>
   )
 }
