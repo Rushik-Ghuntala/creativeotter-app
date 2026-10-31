@@ -46,7 +46,7 @@ CVA/`cva` variant definitions) may live in its own non-`.tsx` file or co-located
 
 Supabase Postgres, accessed through the Supabase JS client (`@supabase/supabase-js`) — the
 server-only admin client lives in [`src/lib/supabase.ts`](src/lib/supabase.ts) and
-authorization is handled in app code via Clerk (not Supabase RLS). **Every schema change ships as a
+authorization uses Supabase Auth, per-user RLS and explicit OAuth client grants. Clerk is not used. The service-role admin client is for trusted maintenance only. **Every schema change ships as a
 forward-only SQL migration** under `supabase/migrations/`, and **an already-applied migration is
 never edited or deleted** — to change it, add a new migration that moves the state forward. Keep the
 hand-maintained types in [`src/lib/database.types.ts`](src/lib/database.types.ts) in sync. See

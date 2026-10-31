@@ -7,8 +7,7 @@ alwaysApply: true
 
 This project uses **Supabase Postgres** accessed through the **Supabase JS client**
 (`@supabase/supabase-js`). There is no ORM. The server-only admin client (service-role key, bypasses
-RLS) lives in `src/lib/supabase.ts`; authorization is handled in app code via **Clerk**, not
-Supabase RLS. Hand-maintained row/insert/update types live in `src/lib/database.types.ts`.
+RLS) lives in `src/lib/supabase.ts`; web and MCP authorization use **Supabase Auth**, RLS and explicit OAuth workspace grants. Clerk is not used. The admin client is for trusted maintenance only. Hand-maintained row/insert/update types live in `src/lib/database.types.ts`.
 
 ## Required
 
@@ -19,8 +18,8 @@ Supabase RLS. Hand-maintained row/insert/update types live in `src/lib/database.
   immutable history. To change something, add a **new** migration that moves the state forward.
 - Keep `src/lib/database.types.ts` in sync with the schema (or regenerate it with
   `supabase gen types typescript` if you adopt the Supabase CLI).
-- Enable Row-Level Security on new tables. Server access uses the service-role key (bypasses RLS), so
-  a table with RLS on and no policies is safe by default.
+- Enable Row-Level Security on new tables. Web and MCP requests use the user token and explicit policies.
+  The service-role client bypasses RLS and is restricted to trusted maintenance.
 
 ## Avoid
 
