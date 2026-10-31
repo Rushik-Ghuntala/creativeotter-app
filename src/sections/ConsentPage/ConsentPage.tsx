@@ -1,10 +1,10 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { z } from "zod"
 import { Brand } from "@/components/common/Brand"
 import { Button } from "@/components/ui/button"
 import { requireWebSession } from "@/lib/auth/session"
 import { decideAuthorization } from "@/lib/oauth/actions"
+import { authorizationIdSchema } from "@/lib/oauth/authorization"
 
 type ConsentPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
@@ -12,7 +12,7 @@ type ConsentPageProps = {
 
 const ConsentPage = async ({ searchParams }: ConsentPageProps) => {
   const params = await searchParams
-  const id = z.uuid().safeParse(params.authorization_id)
+  const id = authorizationIdSchema.safeParse(params.authorization_id)
   if (!id.success)
     return (
       <main className="mx-auto max-w-lg p-8">

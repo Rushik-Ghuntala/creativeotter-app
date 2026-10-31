@@ -5,6 +5,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { safeNextPath } from "@/lib/auth/redirects"
 import { extractBearerToken, verifyMcpToken } from "@/lib/mcp/token"
 import { createCreativeOtterMcp } from "@/lib/mcp/server"
+import { authorizationIdSchema } from "@/lib/oauth/authorization"
 import { isSupportedConsentScope } from "@/lib/oauth/scopes"
 
 const issuer = "https://auth.creativeotter.invalid/auth/v1"
@@ -127,4 +128,19 @@ test("stateless MCP tools expose real account context and no paid capabilities",
     arguments: {},
   })
   assert.equal(capabilities.result.structuredContent.media_generation, false)
+})
+
+test("consent accepts opaque hosted authorization IDs and rejects unsafe query values", () => {
+  for (const id of ["f2qef2sytifyew5va7ylpvbogcjrbpsf", subject])
+    assert.equal(authorizationIdSchema.safeParse(id).success, true)
+  for (const id of [
+    undefined,
+    ["request"],
+    "",
+    "a".repeat(2049),
+    "id&decision=approve",
+    "../callback",
+    "id%26scope",
+  ])
+    assert.equal(authorizationIdSchema.safeParse(id).success, false)
 })

@@ -4,10 +4,11 @@ import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { requireWebSession } from "@/lib/auth/session"
+import { authorizationIdSchema } from "@/lib/oauth/authorization"
 import { isSupportedConsentScope } from "@/lib/oauth/scopes"
 
 export const decideAuthorization = async (form: FormData) => {
-  const id = z.uuid().parse(form.get("authorization_id"))
+  const id = authorizationIdSchema.parse(form.get("authorization_id"))
   const decision = z.enum(["approve", "deny"]).parse(form.get("decision"))
   const { supabase } = await requireWebSession(
     `/oauth/consent?authorization_id=${id}`,
