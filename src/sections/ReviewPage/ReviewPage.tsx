@@ -82,14 +82,14 @@ const ReviewPage = async ({
             credits. Reserved on approval; charged once the image is saved.
           </p>
           <p className="mt-2 text-xs leading-6 text-stone-500">
-            One {snapshot.input.resolution} image · {snapshot.model_name} ·{" "}
-            {snapshot.input.aspect_ratio}. Retail credit purchases are not
-            enabled.{" "}
+            {snapshot.input.resolution
+              ? `One ${snapshot.input.resolution} image`
+              : "One image"}{" "}
+            · {snapshot.model_name} · {snapshot.input.aspect_ratio}. Retail
+            credit purchases are not enabled.{" "}
             {source === "provider" && (
               <>Provider maximum: {snapshot.estimated_cost_label}. </>
             )}
-            Credit price: {snapshot.credit_pricing_version}. Provider estimate
-            version: {snapshot.pricing_version}.
           </p>
         </div>
         <h2 className="mt-7 text-sm font-semibold">Exact prompt</h2>

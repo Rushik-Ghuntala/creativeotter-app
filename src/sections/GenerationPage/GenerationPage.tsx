@@ -1,4 +1,3 @@
-import { NativeCancellation } from "@/components/studio/NativeCancellation"
 import { z } from "zod"
 import { notFound } from "next/navigation"
 import { getPersonalWorkspace } from "@/lib/auth/session"
@@ -40,10 +39,6 @@ const GenerationPage = async ({ params, source }: GenerationPageProps) => {
   return (
     <StudioShell>
       <WebGenerationViewer initial={snapshot} />
-      {source === "native" &&
-        ["awaiting_approval", "awaiting_generation"].includes(
-          snapshot.state,
-        ) && <NativeCancellation generationId={snapshot.generation_id} />}
     </StudioShell>
   )
 }

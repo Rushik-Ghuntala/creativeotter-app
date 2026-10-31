@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { NativeCancellation } from "@/components/studio/NativeCancellation"
 import { GenerationPanel } from "@/components/generation/GenerationPanel"
 import {
   generationSnapshotSchema,
@@ -104,6 +105,10 @@ export const WebGenerationViewer = ({ initial }: WebGenerationViewerProps) => {
         onExpand={() => open(snapshot.outputs[0]?.url || null)}
         onOpenAsset={(asset) => open(asset.url)}
       />
+      {snapshot.execution_source === "native" &&
+        ["awaiting_approval", "awaiting_generation"].includes(
+          snapshot.state,
+        ) && <NativeCancellation generationId={snapshot.generation_id} />}
     </div>
   )
 }
