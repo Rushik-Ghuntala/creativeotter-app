@@ -93,6 +93,19 @@ const main = async () => {
       assert.equal(consent.pathname, "/oauth/consent")
       const id = consent.searchParams.get("authorization_id")
       assert.ok(id)
+      stage = `${label}: deployed consent preserves the opaque request ID`
+      const loginRedirect = await fetch(consent, { redirect: "manual" })
+      assert.ok(
+        [302, 303, 307].includes(loginRedirect.status),
+        "A valid opaque authorization ID must reach login, not the fallback page",
+      )
+      const login = new URL(loginRedirect.headers.get("location"), consent)
+      assert.equal(login.origin, consent.origin)
+      assert.equal(login.pathname, "/auth/login")
+      assert.equal(
+        login.searchParams.get("next"),
+        consent.pathname + consent.search,
+      )
       stage = `${label}: request details and explicit test grant`
       const details = await user.auth.oauth.getAuthorizationDetails(id)
       assert.equal(details.error, null, "Authorization details failed")
