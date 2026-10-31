@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { requireWebSession } from "@/lib/auth/session"
+import { isSupportedConsentScope } from "@/lib/oauth/scopes"
 
 export const decideAuthorization = async (form: FormData) => {
   const id = z.uuid().parse(form.get("authorization_id"))
@@ -27,13 +28,7 @@ export const decideAuthorization = async (form: FormData) => {
   if (!userData.user || data.user.id !== userData.user.id)
     throw new Error("Authorization account mismatch")
   // OIDC scopes disclose identity; workspace permission is separate and enforced by RLS.
-  const supportedScopes = new Set(["email", "openid", "profile"])
-  if (
-    data.scope
-      .split(" ")
-      .filter(Boolean)
-      .some((scope) => !supportedScopes.has(scope))
-  ) {
+  if (!isSupportedConsentScope(data.scope)) {
     redirect(`/oauth/consent?authorization_id=${id}&error=scope`)
   }
   const { data: workspace, error: workspaceError } = await supabase.rpc(

@@ -5,10 +5,18 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { safeNextPath } from "@/lib/auth/redirects"
 import { extractBearerToken, verifyMcpToken } from "@/lib/mcp/token"
 import { createCreativeOtterMcp } from "@/lib/mcp/server"
+import { isSupportedConsentScope } from "@/lib/oauth/scopes"
 
 const issuer = "https://auth.creativeotter.invalid/auth/v1"
 const resource = "https://creativeotter-app.vercel.app/api/mcp"
 const subject = "10000000-0000-4000-8000-000000000001"
+
+test("consent supports refresh-token access without granting unrelated identity scopes", () => {
+  assert.equal(isSupportedConsentScope("email offline_access"), true)
+  assert.equal(isSupportedConsentScope("openid profile email"), true)
+  assert.equal(isSupportedConsentScope("email phone"), false)
+  assert.equal(isSupportedConsentScope("account:write"), false)
+})
 
 test("post-login redirects stay on the application origin", () => {
   for (const value of [

@@ -78,7 +78,7 @@ const ConsentPage = async ({ searchParams }: ConsentPageProps) => {
             View basic account settings. It cannot generate media, spend
             credits, change permissions or approve paid work.
           </li>
-          <li>Identity information requested: {data.scope || "email"}.</li>
+          <li>Sign-in permissions requested: {data.scope || "email"}.</li>
         </ul>
         <details className="mt-5 text-xs text-stone-500">
           <summary className="cursor-pointer">Application details</summary>

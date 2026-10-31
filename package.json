@@ -10,15 +10,16 @@
     "tsc": "tsc --noEmit",
     "prepare": "husky",
     "prettier": "prettier --write */**/*.{js,jsx,json,ts,tsx,scss,css,md}",
-    "format": "prettier --check \"**/*.{ts,tsx,js,jsx,md,mdx,css,yaml,yml}\"",
+    "format": "prettier --check \"**/*.{ts,tsx,js,jsx,mjs,md,mdx,css,yaml,yml}\"",
     "lint:staged": "eslint --fix",
-    "format:fix": "prettier --write \"**/*.{ts,tsx,js,jsx,md,mdx,css,yaml,yml}\"",
+    "format:fix": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,md,mdx,css,yaml,yml}\"",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:database": "node --env-file=.env --import tsx scripts/test-database.ts",
     "db:dry-run": "node scripts/database.mjs dry-run",
     "db:push": "node scripts/database.mjs push",
     "db:list": "node scripts/database.mjs list",
-    "db:configure": "node scripts/database.mjs configure"
+    "db:configure": "node scripts/database.mjs configure",
+    "test:oauth": "node --env-file=.env scripts/test-oauth.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",

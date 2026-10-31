@@ -89,7 +89,7 @@ No generation or credit charge should occur during these checks.
 
 ## Implementation notes
 
-- `email`, `openid` and `profile` are OIDC identity scopes. They do not provide database access; workspace membership and app-level `account:read` grants do that.
+- `email`, `openid` and `profile` are OIDC identity scopes. `offline_access` permits refresh-token connections and is accepted by consent. They do not provide database access; workspace membership and app-level `account:read` grants do that.
 - OAuth approval, session refresh and client registration are handled by Supabase Auth. The app does not implement its own authorization-code or refresh-token store.
 - MCP cookies are ignored; Bearer access tokens are required. User data is queried with the user's token and RLS, not the admin service role.
 - The production app origin is configured explicitly, not derived from a caller's Host header. MCP Origin checks allow the app, ChatGPT and Claude; requests without Origin are accepted only with the normal OAuth checks.
@@ -97,3 +97,7 @@ No generation or credit charge should occur during these checks.
 - The initial migration is immutable after applying it. Any schema or hook change goes in a new migration.
 
 Official references checked during implementation: [Supabase OAuth setup](https://supabase.com/docs/guides/auth/oauth-server/getting-started), [Supabase token security](https://supabase.com/docs/guides/auth/oauth-server/token-security), [OpenAI MCP authentication](https://developers.openai.com/plugins/build/auth).
+
+## Verified deployment — 2026-11-01
+
+The production app, callback URL, hosted OAuth server, dynamic registration and access-token hook were configured. Both disposable client protocol fixtures passed DCR, PKCE, resource-bound JWT validation, deployed MCP calls, token refresh and immediate revocation against the same workspace. All fixtures were removed. Real users still complete their own account sign-in and assistant connection.
