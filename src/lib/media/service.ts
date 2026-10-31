@@ -27,6 +27,7 @@ export const getMediaAccess = async (
       can_read: false,
       can_prepare: false,
       provider_budget_enabled: false,
+      credit_pricing_enabled: false,
       provider_ready: providerConfigured(),
     }
   return { ...data, provider_ready: providerConfigured() }
@@ -43,9 +44,14 @@ export const prepareImageQuote = async (
       "The generation provider is not configured yet. Add FAL_KEY on the server before preparing a real request.",
     )
   const access = await getMediaAccess(client, workspaceId)
-  if (!access.enabled || !access.can_prepare || !access.provider_budget_enabled)
+  if (
+    !access.enabled ||
+    !access.can_prepare ||
+    !access.provider_budget_enabled ||
+    !access.credit_pricing_enabled
+  )
     throw new Error(
-      "Provider fallback requires media access and an operator-configured provider budget. Native host tools remain usable independently.",
+      "Provider fallback requires media access, configured credit pricing and an operator-configured provider budget. Native host tools remain usable independently.",
     )
   const input = imageInputSchema.parse(value)
   const { data, error } = await client.rpc("prepare_image_quote", {
@@ -120,6 +126,10 @@ export const getGenerationSnapshot = async (
     state,
     input,
     max_cost_micro_usd: String(quote.max_cost_micro_usd),
+    credit_units:
+      quote.credit_units === null ? null : String(quote.credit_units),
+    credit_status: job?.credit_status || "quoted",
+    credit_pricing_version: quote.credit_pricing_version,
     estimated_cost_label: formatProviderEstimate(quote.max_cost_micro_usd),
     pricing_version: quote.pricing_version,
     expires_at: quote.expires_at,

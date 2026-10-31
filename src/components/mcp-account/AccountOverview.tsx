@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- MCP iframe embeds an optimized image and does not run inside Next.js. */
+import { formatCreditUnits } from "@/lib/credits/contracts"
 import { ArrowRight, Check, ShieldCheck } from "lucide-react"
 import { AccountRow } from "@/components/mcp-account/AccountRow"
 import type { AccountSnapshot } from "@/lib/mcp/account"
@@ -67,8 +68,16 @@ export const AccountOverview = ({
     >
       <AccountRow
         label="CREDIT BALANCE"
-        value="Credits are coming soon"
-        detail="Purchases and billing aren’t available yet."
+        value={
+          account.balance
+            ? `${formatCreditUnits(account.balance.available_units)} credits available`
+            : "Credit balance unavailable"
+        }
+        detail={
+          account.balance
+            ? `${formatCreditUnits(account.balance.reserved_units)} reserved · ${formatCreditUnits(account.balance.spent_units)} used. Native images use 0 CreativeOtter credits. Purchases are not enabled.`
+            : "Reconnect to retrieve your actual credit account."
+        }
       />
       <AccountRow
         label="GENERATION PREFERENCE"

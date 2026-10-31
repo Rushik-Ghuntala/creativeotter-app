@@ -1,4 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- References use short-lived signed private storage URLs. */
+import { formatCreditUnits } from "@/lib/credits/contracts"
+import { getCreditSummary } from "@/lib/credits/service"
 import { z } from "zod"
 import { notFound, redirect } from "next/navigation"
 import { getPersonalWorkspace } from "@/lib/auth/session"
@@ -25,6 +27,12 @@ const ReviewPage = async ({ params, searchParams }: ReviewPageProps) => {
   ).catch(() => null)
   if (!snapshot) notFound()
   if (snapshot.job_url) redirect(snapshot.job_url)
+  const credits = await getCreditSummary(supabase, workspace.id)
+  const sufficient = Boolean(
+    credits &&
+    snapshot.credit_units &&
+    BigInt(credits.available_units) >= BigInt(snapshot.credit_units),
+  )
   const query = await searchParams
   return (
     <StudioShell>
@@ -43,15 +51,26 @@ const ReviewPage = async ({ params, searchParams }: ReviewPageProps) => {
         </p>
         <div className="mt-7 rounded-2xl bg-[#eef2e8] p-5">
           <p className="text-xs uppercase tracking-widest text-emerald-800">
-            Maximum provider estimate
+            CreativeOtter credits
           </p>
           <p className="mt-2 text-3xl font-semibold">
-            {snapshot.estimated_cost_label}
+            {snapshot.credit_units
+              ? `${formatCreditUnits(snapshot.credit_units)} credits`
+              : "Unavailable"}
+          </p>
+          <p className="mt-2 text-sm text-emerald-900">
+            Available:{" "}
+            {credits
+              ? formatCreditUnits(credits.available_units)
+              : "unavailable"}{" "}
+            credits. Reserved on approval; charged once the image is saved.
           </p>
           <p className="mt-2 text-xs leading-6 text-stone-500">
             One {snapshot.input.resolution} image · {snapshot.model_name} ·{" "}
             {snapshot.input.aspect_ratio}. Retail credit purchases are not
-            enabled. Estimate version: {snapshot.pricing_version}.
+            enabled. Provider maximum: {snapshot.estimated_cost_label}. Credit
+            price: {snapshot.credit_pricing_version}. Provider estimate version:{" "}
+            {snapshot.pricing_version}.
           </p>
         </div>
         <h2 className="mt-7 text-sm font-semibold">Exact prompt</h2>
@@ -87,8 +106,8 @@ const ReviewPage = async ({ params, searchParams }: ReviewPageProps) => {
             className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900"
           >
             This request could not be approved. Check provider setup, media
-            permissions, quote expiry and the workspace budget. A repeated
-            approval cannot create a second job.
+            permissions, quote expiry, available credits and the workspace
+            budget. A repeated approval cannot create a second job.
           </p>
         )}
         {snapshot.state === "expired" ? (
@@ -107,9 +126,12 @@ const ReviewPage = async ({ params, searchParams }: ReviewPageProps) => {
             />
             <Button
               type="submit"
+              disabled={!sufficient}
               className="w-full rounded-full bg-emerald-950 py-6 text-white"
             >
-              Approve one image · up to {snapshot.estimated_cost_label}
+              {sufficient
+                ? `Approve one image · ${formatCreditUnits(snapshot.credit_units || "0")} credits`
+                : "Insufficient credits or unavailable balance"}
             </Button>
           </form>
         )}

@@ -52,6 +52,30 @@ type Table<Row, Insert> = {
 export type Database = {
   public: {
     Tables: {
+      credit_accounts: Table<
+        {
+          workspace_id: string
+          available_units: number
+          reserved_units: number
+          updated_at: string
+        },
+        { workspace_id: string }
+      >
+      credit_ledger: Table<
+        {
+          id: string
+          workspace_id: string
+          job_id: string | null
+          kind: "grant" | "reserve" | "charge" | "release"
+          amount_units: number
+          delta_available: number
+          delta_reserved: number
+          entry_key: string
+          note: string
+          created_at: string
+        },
+        Record<string, never>
+      >
       native_generations: Table<NativeGeneration, Partial<NativeGeneration>>
       media_assets: Table<MediaAsset, Partial<MediaAsset>>
       generation_quotes: Table<ImageQuote, Partial<ImageQuote>>
@@ -94,6 +118,16 @@ export type Database = {
     }
     Views: { [_ in never]: never }
     Functions: {
+      get_credit_summary: { Args: { target_workspace: string }; Returns: Json }
+      record_credit_grant: {
+        Args: {
+          target_workspace: string
+          units: string
+          external_event_id: string
+          reason: string
+        }
+        Returns: Json
+      }
       prepare_native_output: {
         Args: {
           target_workspace: string

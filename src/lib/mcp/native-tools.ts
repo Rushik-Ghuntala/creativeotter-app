@@ -96,6 +96,7 @@ export const registerNativeTools = (
           access.enabled &&
           access.can_prepare &&
           access.provider_budget_enabled &&
+          access.credit_pricing_enabled &&
           access.provider_ready
         return {
           ...resolveExecutionRoute(

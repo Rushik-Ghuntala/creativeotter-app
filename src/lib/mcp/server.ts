@@ -1,3 +1,4 @@
+import { getCreditSummary } from "@/lib/credits/service"
 import { registerNativeTools, NATIVE_TOOLS } from "@/lib/mcp/native-tools"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/database.types"
@@ -16,7 +17,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.3.0"
+const productVersion = "0.4.0"
 
 const readOnly = {
   readOnlyHint: true,
@@ -60,7 +61,8 @@ export const createCreativeOtterMcp = (
         access?.enabled &&
         access.can_prepare &&
         access.provider_ready &&
-        access.provider_budget_enabled,
+        access.provider_budget_enabled &&
+        access.credit_pricing_enabled,
       )
       const data = {
         product: "CreativeOtter",
@@ -99,6 +101,10 @@ export const createCreativeOtterMcp = (
         media_generation: ready,
         uploads: Boolean(access?.enabled && access.can_prepare),
         billing: false,
+        credit_accounting: Boolean(client),
+        credit_purchases: false,
+        credit_units_per_display_credit: 1000,
+        native_image_credit_units: "0",
         generation_mode: "review",
         default_models: {
           image: "native_if_suitable",
@@ -147,13 +153,16 @@ export const createCreativeOtterMcp = (
     async ({ section }) => {
       const data = createAccountSnapshot(context, appUrl, section, email)
       if (client) {
+        data.balance = await getCreditSummary(client, context.workspace.id)
+        if (data.balance) data.billing_status = "credits_ready"
         const access = await getMediaAccess(client, context.workspace.id)
         data.native_output_import = access.enabled && access.can_prepare
         data.uploads = data.native_output_import
         data.media_generation = Boolean(
           data.uploads &&
           access.provider_ready &&
-          access.provider_budget_enabled,
+          access.provider_budget_enabled &&
+          access.credit_pricing_enabled,
         )
         if (access.can_read) {
           const [native, provider] = await Promise.all([

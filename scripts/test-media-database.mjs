@@ -40,6 +40,18 @@ try {
     const workspace = await client.rpc("ensure_personal_workspace")
     assert.equal(workspace.error, null)
     await sql`insert into private.workspace_generation_limits(workspace_id,enabled,daily_budget_micro_usd) values(${workspace.data.id},true,1000000)`
+    await sql`insert into private.workspace_credit_prices(workspace_id,model_key,version,credit_units,valid_until,enabled) values(${workspace.data.id},'image/nano-banana-2','fixture-only',16000,now()+interval '1 hour',true)`
+    assert.equal(
+      (
+        await admin.rpc("record_credit_grant", {
+          target_workspace: workspace.data.id,
+          units: "1000000",
+          external_event_id: `test-${randomUUID()}`,
+          reason: "Disposable integration fixture",
+        })
+      ).error,
+      null,
+    )
     fixtures.push({
       client,
       userId: created.data.user.id,

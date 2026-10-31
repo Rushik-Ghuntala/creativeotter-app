@@ -1,3 +1,4 @@
+import { formatCreditUnits } from "@/lib/credits/contracts"
 import { useState } from "react"
 import {
   Maximize2,
@@ -63,8 +64,10 @@ export const GenerationPanel = ({
             <span className="gen-separator">·</span>
             <strong>
               {snapshot.execution_source === "native"
-                ? "Native tool"
-                : `${snapshot.estimated_cost_label} provider estimate`}
+                ? "Native tool · 0 credits"
+                : snapshot.credit_units
+                  ? `${formatCreditUnits(snapshot.credit_units)} credits${snapshot.credit_status === "reserved" ? " reserved" : snapshot.credit_status === "charged" ? " charged" : snapshot.credit_status === "released" ? " released" : " quoted"}`
+                  : "Credit price unavailable"}
             </strong>
           </p>
         </div>
@@ -185,8 +188,8 @@ export const GenerationPanel = ({
       <footer className="gen-footer">
         <p>
           {snapshot.execution_source === "native"
-            ? "Made with your assistant’s native tool. No CreativeOtter provider inference charge; host usage limits may apply."
-            : "Provider generation uses the inputs and maximum estimate you approved. Retail credit billing is not enabled."}
+            ? "0 CreativeOtter credits. Made with your assistant’s native tool; host usage limits may apply."
+            : "Provider credits are reserved on approval and charged after a saved output. Confirmed failures release the reservation; uncertain outcomes stay reserved for review."}
         </p>
         {snapshot.job_url && (
           <button

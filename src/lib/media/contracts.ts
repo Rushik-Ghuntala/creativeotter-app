@@ -22,6 +22,7 @@ export type GenerationAccess = {
   can_read: boolean
   can_prepare: boolean
   provider_budget_enabled: boolean
+  credit_pricing_enabled: boolean
 }
 export type MediaAsset = {
   id: string
@@ -40,6 +41,8 @@ export type MediaAsset = {
   created_at: string
 }
 export type ImageQuote = {
+  credit_units: number | null
+  credit_pricing_version: string | null
   id: string
   workspace_id: string
   user_id: string
@@ -64,6 +67,8 @@ export const jobStateSchema = z.enum([
   "save_failed",
 ])
 export type ImageJob = {
+  credit_units: number | null
+  credit_status: "unpriced" | "reserved" | "charged" | "released"
   id: string
   quote_id: string
   workspace_id: string
@@ -136,6 +141,19 @@ export const generationSnapshotSchema = z.object({
   ]),
   input: nativeInputSchema,
   max_cost_micro_usd: z.string().nullable(),
+  credit_units: z.string().regex(/^\d+$/).nullable().default(null),
+  credit_status: z
+    .enum([
+      "quoted",
+      "unpriced",
+      "reserved",
+      "charged",
+      "released",
+      "native_no_charge",
+    ])
+    .nullable()
+    .default(null),
+  credit_pricing_version: z.string().nullable().default(null),
   estimated_cost_label: z.string(),
   pricing_version: z.string().nullable(),
   expires_at: z.string().nullable(),

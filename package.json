@@ -1,6 +1,6 @@
 {
   "name": "creativeotter-app",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "dev": "yarn build:ui && next dev --turbopack",
@@ -14,6 +14,7 @@
     "lint:staged": "eslint --fix",
     "format:fix": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,md,mdx,css,yaml,yml}\"",
     "test": "yarn build:ui && node --conditions=react-server --import tsx --test tests/*.test.ts",
+    "test:credits:database": "node --env-file=.env --conditions=react-server --import tsx scripts/test-credits-database.mjs",
     "test:media:database": "node --env-file=.env --conditions=react-server --import tsx scripts/test-media-database.mjs",
     "test:database": "node --env-file=.env --import tsx scripts/test-database.ts",
     "db:dry-run": "node scripts/database.mjs dry-run",

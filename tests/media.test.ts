@@ -1,3 +1,4 @@
+import { formatCreditUnits, creditSummarySchema } from "@/lib/credits/contracts"
 import test from "node:test"
 import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
@@ -140,5 +141,21 @@ test("saved image validation checks actual format, dimensions and bounded bytes"
       new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
       "image/png",
     ),
+  )
+})
+
+test("credits preserve integer precision and reject ambiguous monetary data", () => {
+  assert.equal(formatCreditUnits("0"), "0")
+  assert.equal(formatCreditUnits("1"), "0.001")
+  assert.equal(formatCreditUnits("16000"), "16")
+  assert.equal(
+    formatCreditUnits("900719925474099312345"),
+    "900,719,925,474,099,312.345",
+  )
+  for (const value of ["-1", "1.5", "NaN"])
+    assert.throws(() => formatCreditUnits(value))
+  assert.equal(
+    creditSummarySchema.safeParse({ available_units: 16000 }).success,
+    false,
   )
 })

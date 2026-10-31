@@ -103,7 +103,8 @@ export const registerMediaTools = (
                 state.provider_ready &&
                 state.enabled &&
                 state.can_prepare &&
-                state.provider_budget_enabled,
+                state.provider_budget_enabled &&
+                state.credit_pricing_enabled,
               operations: ["text_to_image", "reference_image_edit"],
               parameters_tool: "get_model_params",
             },
@@ -142,7 +143,7 @@ export const registerMediaTools = (
         approval:
           "estimate_generation prepares a bound quote; generate_image opens the review panel; only an authenticated browser approval can start the job",
         pricing:
-          "Obtain the current maximum provider estimate from estimate_generation. Retail credits and purchases are not implemented.",
+          "Obtain the current maximum provider estimate from estimate_generation. The quote binds a versioned credit price; approval reserves that amount from the shared workspace wallet. Purchases are not enabled.",
       })),
   )
   server.registerTool(

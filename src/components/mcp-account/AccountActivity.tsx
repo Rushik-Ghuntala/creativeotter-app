@@ -1,3 +1,4 @@
+import { formatCreditUnits } from "@/lib/credits/contracts"
 import { Clock3 } from "lucide-react"
 import type { AccountSnapshot } from "@/lib/mcp/account"
 
@@ -48,9 +49,29 @@ export const AccountActivity = ({ account }: { account: AccountSnapshot }) => (
         </p>
       </div>
     )}
+    {Boolean(account.balance?.history.length) && (
+      <div
+        className="account-rows"
+        aria-label="Credit activity"
+      >
+        {account.balance?.history.map((item) => (
+          <div
+            className="account-row"
+            key={item.id}
+          >
+            <div>
+              <p className="eyebrow">{item.kind}</p>
+              <strong>{formatCreditUnits(item.amount_units)} credits</strong>
+              <p>{item.note}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
     <p className="empty-caption">
-      Native host usage and provider estimates are separate. Credit billing is
-      not enabled.
+      Native host usage and provider estimates are separate. Credits are
+      reserved on approval; confirmed failures release them. Purchases are not
+      enabled.
     </p>
   </section>
 )

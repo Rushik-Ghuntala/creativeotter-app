@@ -1,3 +1,5 @@
+import { CreditBalance } from "@/components/dashboard/CreditBalance"
+import { getCreditSummary } from "@/lib/credits/service"
 import Link from "next/link"
 import { Brand } from "@/components/common/Brand"
 import { Button } from "@/components/ui/button"
@@ -15,6 +17,7 @@ const DashboardPage = async () => {
     .order("created_at", { ascending: false })
   if (error) throw new Error("Unable to load connected applications")
   const resource = getMcpResource()
+  const credits = await getCreditSummary(supabase, workspace.id)
   return (
     <div className="min-h-screen bg-[#f6f5ef] text-stone-900">
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 border-b border-stone-200 px-6 py-5">
@@ -38,6 +41,7 @@ const DashboardPage = async () => {
         <p className="mt-4 text-stone-600">
           {user.email} · {workspace.name}
         </p>
+        <CreditBalance summary={credits} />
         <div className="mt-10 grid gap-6 lg:grid-cols-[1.15fr_1fr]">
           <section className="rounded-3xl bg-[#102f28] p-7 text-white lg:p-9">
             <p className="text-sm text-orange-200">Connect your assistants</p>

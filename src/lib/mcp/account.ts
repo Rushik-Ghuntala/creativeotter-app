@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { creditSummarySchema } from "@/lib/credits/contracts"
 import type { McpContext } from "@/lib/database.types"
 
 export const accountSectionSchema = z.enum(["overview", "activity", "settings"])
@@ -11,8 +12,8 @@ export const accountSnapshotSchema = z.object({
   role: z.enum(["owner", "admin", "creator", "viewer"]),
   permissions: z.array(z.string()),
   account_url: z.url(),
-  balance: z.null(),
-  billing_status: z.literal("not_implemented"),
+  balance: creditSummarySchema.nullable(),
+  billing_status: z.enum(["not_implemented", "credits_ready"]),
   generation_mode: z.literal("review"),
   media_generation: z.boolean(),
   uploads: z.boolean(),
@@ -57,6 +58,6 @@ export const createAccountSnapshot = (
   activity: [],
   message:
     section === "activity"
-      ? "Saved native images and provider requests appear when media library access is enabled. Credit billing is not implemented."
+      ? "Saved native images and provider requests appear when media library access is enabled. Credit purchases are not enabled."
       : "Connected to your CreativeOtter workspace. Use suitable native host tools first; provider fallback requires configuration and direct approval.",
 })

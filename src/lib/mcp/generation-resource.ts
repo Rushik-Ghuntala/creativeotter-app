@@ -7,7 +7,7 @@ import {
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { getPublicEnv } from "@/lib/env"
 
-export const GENERATION_RESOURCE_URI = "ui://creativeotter/generation-v1.html"
+export const GENERATION_RESOURCE_URI = "ui://creativeotter/generation-v2.html"
 export const registerGenerationResource = (
   server: McpServer,
   appUrl: string,

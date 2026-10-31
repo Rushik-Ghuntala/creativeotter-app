@@ -16,7 +16,7 @@ Next.js 16 and Supabase authentication/MCP foundation. Uses **Supabase Auth**, p
 - Image Output/Inputs MCP App and web viewer, signed downloads, favorites, exact prompts and references.
 - Optional fal.ai Nano Banana 2 fallback with immutable quotes, browser-only approval, a workspace budget, idempotent submission and uncertain-outcome reconciliation.
 
-Native creation uses an actual tool exposed by the host assistant and does not require our provider key. Import is an explicitly enabled private preview. Provider inference stays unavailable until server credentials and a positive workspace budget are configured. Billing and retail credits are not implemented; account balances remain unavailable. Only the image backend workflow is implemented. See [hybrid media setup](docs/hybrid-media.md).
+Native creation uses an actual tool exposed by the host assistant and does not require our provider key. Import is an explicitly enabled private preview. Provider inference stays unavailable until server credentials and a positive workspace budget are configured. Transactional credit accounting is implemented with actual workspace balances, immutable ledger history and reserve/charge/release handling. Native images use zero CreativeOtter credits. Credit purchases are not enabled; no trial credits are silently issued. Retail pricing must be deliberately configured before provider quotes can be prepared. Only the image backend workflow is implemented. See [hybrid media setup](docs/hybrid-media.md).
 
 ## Local setup
 
@@ -48,6 +48,7 @@ yarn build
 yarn test:database
 yarn test:oauth
 yarn test:media:database
+yarn test:credits:database
 ```
 
 The database integration test creates two disposable confirmed test users, sends no emails, checks real password sign-in, workspace isolation, grant restrictions, hook output and immediate revocation, and removes those users and their workspaces afterward. Run against the configured development project only. It does not replace a live OAuth connection test through each assistant.
@@ -55,3 +56,5 @@ The database integration test creates two disposable confirmed test users, sends
 Follow `AGENTS.md`, `CLAUDE.md` and `.cursor/rules/`: arrow functions, one component per file, thin routes composing `sections/`, alias imports, repository Prettier formatting and immutable applied migrations.
 
 The hosted OAuth test registers two disposable public client fixtures, exchanges PKCE codes, checks authenticated calls on the deployed MCP service, refreshes tokens and verifies immediate grant revocation. It removes its clients and test user. It does not install plugins or sign in to a real Codex/Claude account.
+
+See [credit accounting](docs/credit-accounting.md) for pricing configuration, trusted issuance, settlement, operational limits and test coverage.
