@@ -57,7 +57,7 @@ const StudioHomePage = async () => {
   const { supabase, workspace } = await getPersonalWorkspace("/studio")
   const [characters, library] = await Promise.all([
     listStudioRecords(supabase, workspace.id, "characters"),
-    listLibraryAssets(supabase, workspace.id),
+    listLibraryAssets(supabase, workspace.id, { size: 4 }),
   ])
   const characterImages = await getRecordImages(
     supabase,

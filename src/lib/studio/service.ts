@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto"
 import { z } from "zod"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/database.types"
-import { signAsset } from "@/lib/media/assets"
+import { signAssets } from "@/lib/media/assets"
 import {
   sectionTable,
   parseRecordInput,
@@ -160,7 +160,7 @@ export const getProjectDetails = async (
     .reduce((sum, x) => sum + BigInt(x.credit_units || 0), BigInt(0))
   return {
     shots: shots.data,
-    assets: await Promise.all(rows.data.map((x) => signAsset(client, x))),
+    assets: await signAssets(client, rows.data),
     charged_units: charged.toString(),
   }
 }
@@ -243,10 +243,11 @@ export const listLibraryAssets = async (
     kind?: string
     favorite?: boolean
     page?: number
+    size?: number
   } = {},
 ) => {
   const page = Math.max(1, Math.min(options.page || 1, 1000)),
-    size = 24
+    size = Math.max(1, Math.min(Math.trunc(options.size || 24), 24))
   let query = client
     .from("media_assets")
     .select("*", { count: "exact" })
@@ -265,56 +266,57 @@ export const listLibraryAssets = async (
   if (result.error) throw new Error("Unable to open your library")
   const rows = result.data || [],
     ids = rows.map((x) => x.id)
-  const [native, jobs] = ids.length
-    ? await Promise.all([
-        client
-          .from("native_generations")
-          .select("id,asset_id,state,credit_units,credit_status")
-          .eq("workspace_id", workspaceId)
-          .in("asset_id", ids),
-        client
-          .from("generation_jobs")
-          .select(
-            "id,quote_id,output_asset_id,state,credit_units,credit_status",
-          )
-          .eq("workspace_id", workspaceId)
-          .in("output_asset_id", ids),
-      ])
-    : [
-        { data: [], error: null },
-        { data: [], error: null },
-      ]
+  const [assets, [native, jobs]] = await Promise.all([
+    signAssets(client, rows),
+    ids.length
+      ? Promise.all([
+          client
+            .from("native_generations")
+            .select("id,asset_id,state,credit_units,credit_status")
+            .eq("workspace_id", workspaceId)
+            .in("asset_id", ids),
+          client
+            .from("generation_jobs")
+            .select(
+              "id,quote_id,output_asset_id,state,credit_units,credit_status",
+            )
+            .eq("workspace_id", workspaceId)
+            .in("output_asset_id", ids),
+        ])
+      : ([
+          { data: [], error: null },
+          { data: [], error: null },
+        ] as const),
+  ])
   if (native.error || jobs.error)
     throw new Error("Unable to load saved generation details")
-  const items = await Promise.all(
-    rows.map(async (row) => {
-      const n = native.data?.find((x) => x.asset_id === row.id),
-        j = jobs.data?.find((x) => x.output_asset_id === row.id)
-      return {
-        asset: await signAsset(client, row),
-        kind: row.kind,
-        created_at: row.created_at,
-        generation_id:
-          n?.state === "succeeded"
-            ? n.id
-            : j?.state === "succeeded"
-              ? j.quote_id
-              : null,
-        execution_source: n ? ("native" as const) : ("provider" as const),
-        href: n
-          ? `/studio/native/${n.id}`
-          : j
-            ? `/studio/jobs/${j.id}`
-            : `/studio/assets/${row.id}`,
-        charged_units:
-          n?.credit_status === "charged"
-            ? String(n.credit_units)
-            : j?.credit_status === "charged"
-              ? String(j.credit_units)
-              : null,
-      }
-    }),
-  )
+  const items = rows.map((row, index) => {
+    const n = native.data?.find((x) => x.asset_id === row.id),
+      j = jobs.data?.find((x) => x.output_asset_id === row.id)
+    return {
+      asset: assets[index],
+      kind: row.kind,
+      created_at: row.created_at,
+      generation_id:
+        n?.state === "succeeded"
+          ? n.id
+          : j?.state === "succeeded"
+            ? j.quote_id
+            : null,
+      execution_source: n ? ("native" as const) : ("provider" as const),
+      href: n
+        ? `/studio/native/${n.id}`
+        : j
+          ? `/studio/jobs/${j.id}`
+          : `/studio/assets/${row.id}`,
+      charged_units:
+        n?.credit_status === "charged"
+          ? String(n.credit_units)
+          : j?.credit_status === "charged"
+            ? String(j.credit_units)
+            : null,
+    }
+  })
   return { items, total: result.count || 0, page, size }
 }
 export type LibraryItem = Awaited<

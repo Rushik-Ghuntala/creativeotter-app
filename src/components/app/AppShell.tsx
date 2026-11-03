@@ -1,3 +1,4 @@
+import Link from "next/link"
 import type { ReactNode } from "react"
 import { getPersonalWorkspace } from "@/lib/auth/session"
 import { getCreditSummary } from "@/lib/credits/service"
@@ -49,7 +50,7 @@ export const AppShell = async ({ children, studio = false }: AppShellProps) => {
           CreativeOtter <span className="otter-spark">✳</span> A home for your
           next idea.
         </span>
-        <a href="/connect">One workspace. All your assistants. ↗</a>
+        <Link href="/connect">One workspace. All your assistants. ↗</Link>
       </footer>
     </div>
   )

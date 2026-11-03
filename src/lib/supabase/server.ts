@@ -1,10 +1,11 @@
 import "server-only"
+import { cache } from "react"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { getPublicEnv } from "@/lib/env"
 import type { Database } from "@/lib/database.types"
 
-export const createServerSupabase = async () => {
+export const createServerSupabase = cache(async () => {
   const store = await cookies()
   const env = getPublicEnv()
   return createServerClient<Database>(env.url, env.key, {
@@ -21,4 +22,4 @@ export const createServerSupabase = async () => {
       },
     },
   })
-}
+})

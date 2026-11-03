@@ -1,4 +1,5 @@
 "use client"
+import Form from "next/form"
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -102,7 +103,7 @@ export const LibraryBrowser = ({
           />
           Favorites
         </Link>
-        <form
+        <Form
           action={basePath}
           className="library-search"
         >
@@ -135,7 +136,7 @@ export const LibraryBrowser = ({
             placeholder="Search your library…"
           />
           <button className="button-secondary">Search</button>
-        </form>
+        </Form>
       </div>
       <p className="small-muted">
         {total} saved {total === 1 ? "asset" : "assets"}, newest first. Select
@@ -144,13 +145,13 @@ export const LibraryBrowser = ({
       {selected.length > 0 && (
         <div className="gallery-selection">
           <span>{selected.length} selected</span>
-          <a
+          <Link
             href={`/studio/gallery?items=${encodeURIComponent(gallery.join(","))}&title=${encodeURIComponent("Your CreativeOtter gallery")}`}
             className="button-primary"
           >
             <Images size={16} />
             Open CreativeOtter gallery
-          </a>
+          </Link>
           <button
             className="button-secondary"
             onClick={() => setSelected([])}
@@ -174,7 +175,7 @@ export const LibraryBrowser = ({
             className={`library-tile ${selectedIndex(item.asset.id) >= 0 ? "selected" : ""}`}
           >
             <div className="library-image">
-              <a
+              <Link
                 href={item.href || item.asset.url}
                 aria-label={`View ${item.asset.label}`}
               >
@@ -185,7 +186,7 @@ export const LibraryBrowser = ({
                   alt={item.asset.label}
                   unoptimized
                 />
-              </a>
+              </Link>
               {item.generation_id && (
                 <button
                   aria-label={`Select ${item.asset.label}`}

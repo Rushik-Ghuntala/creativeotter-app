@@ -17,8 +17,9 @@ export const refreshWebSession = async (request: NextRequest) => {
       },
     },
   })
-  // Validate/refresh, but authorize again in each page, action and MCP request.
-  await supabase.auth.getUser()
+  // Verify the JWT/refresh here. Pages and actions still validate the user
+  // with getUser(), so each navigation avoids a duplicate Auth network call.
+  await supabase.auth.getClaims()
   response.headers.set("Cache-Control", "private, no-store")
   response.headers.set("Referrer-Policy", "same-origin")
   return response

@@ -10,30 +10,51 @@ import {
   type DisplayAsset,
 } from "@/lib/media/contracts"
 
+// Batch private URL signing so a library page needs one Storage request.
+export const signAssets = async (
+  client: SupabaseClient<Database>,
+  assets: MediaAsset[],
+): Promise<DisplayAsset[]> => {
+  if (!assets.length) return []
+  const paths = [...new Set(assets.map((asset) => asset.storage_path))]
+  const { data, error } = await client.storage
+    .from(MEDIA_BUCKET)
+    .createSignedUrls(paths, 3600)
+  if (error || !data) throw new Error("Unable to open these private assets")
+  const signed = new Map(data.map((item) => [item.path, item]))
+  return assets.map((asset) => {
+    const item = signed.get(asset.storage_path)
+    if (item?.error || !item?.signedUrl)
+      throw new Error("Unable to open this private asset")
+    // The Storage SDK also adds download filenames as a query parameter.
+    const download = new URL(item.signedUrl)
+    const extension =
+      asset.mime_type === "image/jpeg"
+        ? "jpg"
+        : asset.mime_type === "image/webp"
+          ? "webp"
+          : "png"
+    download.searchParams.set(
+      "download",
+      `creativeotter-${asset.id}.${extension}`,
+    )
+    return {
+      id: asset.id,
+      label: asset.label,
+      url: item.signedUrl,
+      download_url: download.toString(),
+      mime_type: asset.mime_type,
+      width: asset.width,
+      height: asset.height,
+      favorite: asset.favorite,
+    }
+  })
+}
+
 export const signAsset = async (
   client: SupabaseClient<Database>,
   asset: MediaAsset,
-): Promise<DisplayAsset> => {
-  const storage = client.storage.from(MEDIA_BUCKET)
-  const [view, download] = await Promise.all([
-    storage.createSignedUrl(asset.storage_path, 3600),
-    storage.createSignedUrl(asset.storage_path, 3600, {
-      download: `creativeotter-${asset.id}.${asset.mime_type === "image/jpeg" ? "jpg" : asset.mime_type === "image/webp" ? "webp" : "png"}`,
-    }),
-  ])
-  if (view.error || !view.data || download.error || !download.data)
-    throw new Error("Unable to open this private asset")
-  return {
-    id: asset.id,
-    label: asset.label,
-    url: view.data.signedUrl,
-    download_url: download.data.signedUrl,
-    mime_type: asset.mime_type,
-    width: asset.width,
-    height: asset.height,
-    favorite: asset.favorite,
-  }
-}
+): Promise<DisplayAsset> => (await signAssets(client, [asset]))[0]
 
 export const beginMediaUpload = async (
   client: SupabaseClient<Database>,

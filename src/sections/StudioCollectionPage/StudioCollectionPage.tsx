@@ -1,3 +1,4 @@
+import Form from "next/form"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Plus } from "lucide-react"
@@ -81,7 +82,7 @@ const StudioCollectionPage = async ({
         </div>
       )}
       <div className="collection-toolbar">
-        <form action={`/studio/${section}`}>
+        <Form action={`/studio/${section}`}>
           <input
             name="q"
             type="search"
@@ -97,7 +98,7 @@ const StudioCollectionPage = async ({
             />
           )}
           <button className="button-secondary">Search</button>
-        </form>
+        </Form>
         <Link
           href={`/studio/${section}${archived ? "" : "?archived=true"}`}
           className="button-text"

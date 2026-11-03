@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { ActionForm } from "@/components/common/ActionForm"
 import {
   saveProfileAction,
@@ -135,7 +136,7 @@ export const SettingsPanel = ({
       ) : (
         <p className="empty-inline">
           No connected assistants yet.{" "}
-          <a href="/connect">Connect Codex or Claude ↗</a>
+          <Link href="/connect">Connect Codex or Claude ↗</Link>
         </p>
       )}
     </section>

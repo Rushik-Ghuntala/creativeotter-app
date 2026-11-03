@@ -1,4 +1,5 @@
 "use client"
+import Link from "next/link"
 import { useEffect, useState, type ReactNode } from "react"
 import { StudioSidebar } from "@/components/app/StudioSidebar"
 import { StudioTopbar } from "@/components/app/StudioTopbar"
@@ -121,7 +122,7 @@ export const StudioFrame = ({
           <span>
             CreativeOtter <span>✳</span> Make something worth sharing.
           </span>
-          <a href="/connect">Your assistants. One creative home. ↗</a>
+          <Link href="/connect">Your assistants. One creative home. ↗</Link>
         </footer>
       </div>
     </div>
