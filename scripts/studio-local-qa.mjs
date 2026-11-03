@@ -16,6 +16,42 @@ const admin = createClient(
 const main = async () => {
   if (process.argv[2] === "cleanup") {
     const state = JSON.parse(await readFile(statePath, "utf8"))
+    assert.match(state.email, /^creativeotter-local-[0-9a-f-]+@example\.com$/)
+    const fixture = await admin.auth.admin.getUserById(state.user_id)
+    assert.equal(
+      fixture.data.user?.email,
+      state.email,
+      "Refuse cleanup of a non-fixture user",
+    )
+    const owned = await admin
+      .from("workspaces")
+      .select("personal_owner_id")
+      .eq("id", state.workspace_id)
+      .single()
+    assert.equal(
+      owned.data?.personal_owner_id,
+      state.user_id,
+      "Refuse cleanup of an unrelated workspace",
+    )
+    // Explicitly remove only this fixture's reference-bearing records. Production
+    // account deletion and retention behavior are deliberately unchanged.
+    for (const table of [
+      "studio_characters",
+      "brand_kits",
+      "studio_projects",
+      "studio_voice_presets",
+    ]) {
+      assert.equal(
+        (
+          await admin
+            .from(table)
+            .delete()
+            .eq("workspace_id", state.workspace_id)
+        ).error,
+        null,
+      )
+    }
+
     if (state.storage_paths.length)
       assert.equal(
         (
