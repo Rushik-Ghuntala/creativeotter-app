@@ -40,12 +40,12 @@ const HomePage = () => (
           variant="link"
           className="text-white"
         >
-          <Link href="/dashboard">Open your workspace →</Link>
+          <Link href="/studio">Open your workspace →</Link>
         </Button>
       </div>
       <p className="mt-8 text-sm text-emerald-100/50">
-        Account connections are ready for setup. Media generation is coming
-        next.
+        Native-first image creation, one private library, reusable brand kits,
+        characters and project planning. Connect Codex or Claude to get started.
       </p>
     </section>
     <footer className="text-xs text-emerald-100/50">

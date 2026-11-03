@@ -1,3 +1,4 @@
+import { registerStudioTools, STUDIO_TOOLS } from "@/lib/mcp/studio-tools"
 import { registerGalleryTools } from "@/lib/mcp/gallery-tools"
 import { getCreditSummary } from "@/lib/credits/service"
 import { registerNativeTools, NATIVE_TOOLS } from "@/lib/mcp/native-tools"
@@ -18,7 +19,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.7.1"
+const productVersion = "0.8.0"
 
 const readOnly = {
   readOnlyHint: true,
@@ -44,6 +45,7 @@ export const createCreativeOtterMcp = (
     registerMediaTools(server, client, context, appUrl)
     registerNativeTools(server, client, context)
     registerGalleryTools(server, client, context)
+    registerStudioTools(server, client, context, appUrl)
   }
   server.registerTool(
     "get_capabilities",
@@ -87,13 +89,21 @@ export const createCreativeOtterMcp = (
                 "manage_assets",
               ]
             : []),
-          ...(access?.enabled && access.can_read ? ["show_image_gallery"] : []),
+          ...(access?.enabled && access.can_read
+            ? ["show_image_gallery", ...STUDIO_TOOLS]
+            : []),
           ...(ready
             ? MEDIA_TOOLS.filter(
                 (name) => !["list_models", "get_model_params"].includes(name),
               )
             : []),
         ],
+        studio_records: Boolean(access?.can_read),
+        studio_tools: access?.can_read ? STUDIO_TOOLS : [],
+        studio_url: `${appUrl}/studio`,
+        project_budget_targets_are_enforced: false,
+        paid_services_enabled:
+          process.env.CREATIVEOTTER_PAID_SERVICES_ENABLED === "true",
         image_gallery: Boolean(access?.enabled && access.can_read),
         gallery_tool: "show_image_gallery",
         gallery_endpoint: `${appUrl}/studio/gallery`,
@@ -128,7 +138,7 @@ export const createCreativeOtterMcp = (
           image: "native_if_suitable",
           provider_fallback: ready ? "image/nano-banana-2" : null,
         },
-        setup_url: `${appUrl}/dashboard`,
+        setup_url: `${appUrl}/connect`,
         implemented_categories: ["image"],
         unavailable_categories: [
           "video",

@@ -1,4 +1,15 @@
 import type {
+  BrandKit,
+  StudioCharacter,
+  StudioProject,
+  VoicePreset,
+  StudioShot,
+  ProjectAsset,
+  WorkspacePreferences,
+  WorkspaceInvite,
+  SupportRequest,
+} from "@/lib/studio/contracts"
+import type {
   MediaAsset,
   ImageQuote,
   ImageJob,
@@ -52,6 +63,18 @@ type Table<Row, Insert> = {
 export type Database = {
   public: {
     Tables: {
+      workspace_preferences: Table<
+        WorkspacePreferences,
+        Partial<WorkspacePreferences>
+      >
+      brand_kits: Table<BrandKit, Partial<BrandKit>>
+      studio_characters: Table<StudioCharacter, Partial<StudioCharacter>>
+      studio_projects: Table<StudioProject, Partial<StudioProject>>
+      studio_voice_presets: Table<VoicePreset, Partial<VoicePreset>>
+      studio_shots: Table<StudioShot, Partial<StudioShot>>
+      studio_project_assets: Table<ProjectAsset, Partial<ProjectAsset>>
+      workspace_invites: Table<WorkspaceInvite, Partial<WorkspaceInvite>>
+      support_requests: Table<SupportRequest, Partial<SupportRequest>>
       credit_accounts: Table<
         {
           workspace_id: string
@@ -119,6 +142,32 @@ export type Database = {
     }
     Views: { [_ in never]: never }
     Functions: {
+      list_workspace_members: {
+        Args: { target_workspace: string }
+        Returns: Json
+      }
+      create_workspace_invite: {
+        Args: {
+          target_workspace: string
+          invite_email: string
+          invite_role: string
+          secret_hash: string
+        }
+        Returns: string
+      }
+      revoke_workspace_invite: {
+        Args: { target_invite: string }
+        Returns: undefined
+      }
+      accept_workspace_invite: {
+        Args: { secret_hash: string }
+        Returns: string
+      }
+      can_edit_studio: { Args: { target_workspace: string }; Returns: boolean }
+      can_admin_workspace: {
+        Args: { target_workspace: string }
+        Returns: boolean
+      }
       get_credit_summary: { Args: { target_workspace: string }; Returns: Json }
       record_credit_grant: {
         Args: {

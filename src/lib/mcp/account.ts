@@ -47,7 +47,7 @@ export const createAccountSnapshot = (
   workspace: context.workspace,
   role: context.role,
   permissions: context.permissions,
-  account_url: `${appUrl}/dashboard`,
+  account_url: `${appUrl}/account${section === "settings" ? "?tab=settings" : section === "activity" ? "?tab=billing" : ""}`,
   balance: null,
   billing_status: "not_implemented",
   generation_mode: "direct",

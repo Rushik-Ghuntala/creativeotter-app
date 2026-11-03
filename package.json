@@ -1,6 +1,6 @@
 {
   "name": "creativeotter-app",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "private": true,
   "scripts": {
     "dev": "yarn build:ui && next dev --turbopack",
@@ -24,7 +24,9 @@
     "db:configure": "node scripts/database.mjs configure",
     "test:oauth": "node --env-file=.env scripts/test-oauth.mjs",
     "build:ui": "node scripts/build-mcp-ui.mjs",
-    "test:direct:database": "node --env-file=.env --conditions=react-server --import tsx scripts/test-direct-execution.mjs"
+    "test:direct:database": "node --env-file=.env --conditions=react-server --import tsx scripts/test-direct-execution.mjs",
+    "test:studio:database": "node --env-file=.env --conditions=react-server --import tsx scripts/test-studio-database.mjs",
+    "test:studio:web": "node --env-file=.env scripts/test-studio-web.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.7.5",

@@ -1,3 +1,13 @@
+## Full local Studio (0.8.0)
+
+Run `NEXT_PUBLIC_APP_URL=http://localhost:3001 yarn dev --port 3001` and open [CreativeOtter locally](http://localhost:3001/studio). Port 3000 is used by another app on this workstation. Sign in using the existing Supabase account; there is no Clerk.
+
+The local app includes Account (credits, billing ledger/CSV, searchable library, team invitations and settings), Studio home, Characters, Films/storyboards, voice presets/browser auditions, music briefs, project asset/cost attribution, brand kits, a private asset viewer and connection guides. Data is persisted in Supabase under workspace RLS; creation/planning forms do not spend credits. See [system design](docs/studio-system-design.md).
+
+Paid services stay disabled by default. `CREATIVEOTTER_PAID_SERVICES_ENABLED=true` **and** `FAL_KEY`, verified pricing and a positive operator budget are required for the existing image API adapter. Video/audio/cloning/rendering adapters and checkout/subscriptions are not implemented; their pages provide saved planning workflows and clearly explain this. Native assistant image generation keeps its existing quote/claim/save/settle billing flow. The production MCP endpoint is unchanged; new local tool additions require deployment before they are available there.
+
+Validation: `yarn test`, `yarn tsc`, `yarn lint`, `yarn build`, `yarn test:studio:database`. Database tests use disposable fixture users with explicit cleanup, do not generate media, and do not change a real account balance. The browser QA helper `scripts/studio-local-qa.mjs` writes its temporary credentials only to a private file in `/tmp`; run its `cleanup` command when finished.
+
 # CreativeOtter app
 
 Next.js 16 and Supabase authentication/MCP foundation. Uses **Supabase Auth**, per-user Row Level Security and explicit client grants. No Clerk or client-side JWT-decoding authorization.

@@ -4,5 +4,13 @@ import { refreshWebSession } from "@/lib/supabase/proxy"
 export const proxy = (request: NextRequest) => refreshWebSession(request)
 
 export const config = {
-  matcher: ["/auth/:path*", "/dashboard/:path*", "/oauth/:path*"],
+  matcher: [
+    "/auth/:path*",
+    "/dashboard/:path*",
+    "/oauth/:path*",
+    "/account/:path*",
+    "/studio/:path*",
+    "/invite",
+    "/connect",
+  ],
 }

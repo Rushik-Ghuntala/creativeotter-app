@@ -22,7 +22,8 @@ export const enableMediaAccess = async (form: FormData) => {
     .is("revoked_at", null)
   if (error) throw new Error("Unable to enable media preparation")
   revalidatePath("/dashboard")
-  redirect("/dashboard?notice=media_access_enabled")
+  revalidatePath("/account")
+  redirect("/account?tab=settings&notice=media_access_enabled")
 }
 
 export const approveImageGeneration = async (form: FormData) => {

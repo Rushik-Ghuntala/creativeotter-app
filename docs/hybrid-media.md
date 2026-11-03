@@ -29,7 +29,7 @@ This configures versioned retail pricing only. It never grants credits, configur
 
 ## API fallback
 
-Only one fal.ai Nano Banana 2 image adapter is implemented (one PNG, 1K, up to 14 references). It additionally needs server-only `FAL_KEY`, verified provider pricing and a positive provider micro-USD workspace budget. Never expose provider keys to the client. `estimate_generation` binds the retail credits and maximum provider estimate; `generate_image` starts a unique job and reserves credits directly for the requested image. Unknown submissions are not retried automatically. A saved result settles once; confirmed failure releases once.
+Only one fal.ai Nano Banana 2 image adapter is implemented (one PNG, 1K, up to 14 references). It additionally needs an explicit operator-set `CREATIVEOTTER_PAID_SERVICES_ENABLED=true`, server-only `FAL_KEY`, verified provider pricing and a positive provider micro-USD workspace budget. Never expose provider keys to the client. `estimate_generation` binds the retail credits and maximum provider estimate; `generate_image` starts a unique job and reserves credits directly for the requested image. Unknown submissions are not retried automatically. A saved result settles once; confirmed failure releases once.
 
 Provider reconciliation occurs on status reads; no background scheduler/webhook is implemented. Video/audio/editing billing adapters, checkout/subscriptions/chargebacks/credit expiry and refunds after completed charges remain outside this release. Unsupported native media routes must not be executed for free through CreativeOtter.
 

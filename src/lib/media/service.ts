@@ -42,7 +42,7 @@ export const prepareImageQuote = async (
 ) => {
   if (!providerConfigured())
     throw new Error(
-      "The generation provider is not configured yet. Add FAL_KEY on the server before preparing a real request.",
+      "Paid generation is disabled. An operator must explicitly enable paid services and configure the server provider before preparing a real request.",
     )
   const access = await getMediaAccess(client, workspaceId)
   if (

@@ -200,7 +200,11 @@ export const formatProviderEstimate = (microUsd: number) =>
     currency: "USD",
     maximumFractionDigits: 3,
   }).format(microUsd / 1000000)
-export const providerConfigured = () => Boolean(process.env.FAL_KEY?.trim())
+export const providerConfigured = () =>
+  Boolean(
+    process.env.CREATIVEOTTER_PAID_SERVICES_ENABLED === "true" &&
+    process.env.FAL_KEY?.trim(),
+  )
 export const imageSignatureMatches = (bytes: Uint8Array, mime: string) => {
   const b = bytes
   if (mime === "image/png")

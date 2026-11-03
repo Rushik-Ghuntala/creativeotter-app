@@ -76,6 +76,8 @@ export const revokeClientAccess = async (form: FormData) => {
   if (error) throw new Error("Unable to revoke access")
   const oauth = await supabase.auth.oauth.revokeGrant({ clientId })
   revalidatePath("/dashboard")
-  if (oauth.error) redirect("/dashboard?notice=access_revoked_oauth_pending")
-  redirect("/dashboard?notice=access_revoked")
+  revalidatePath("/account")
+  if (oauth.error)
+    redirect("/account?tab=settings&notice=access_revoked_oauth_pending")
+  redirect("/account?tab=settings&notice=access_revoked")
 }
