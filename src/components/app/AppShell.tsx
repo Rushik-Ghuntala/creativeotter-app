@@ -3,8 +3,8 @@ import { getPersonalWorkspace } from "@/lib/auth/session"
 import { getCreditSummary } from "@/lib/credits/service"
 import { unitsToCredits } from "@/lib/studio/contracts"
 import { AppHeader } from "@/components/app/AppHeader"
+import { StudioFrame } from "@/components/app/StudioFrame"
 import { WorkspaceSwitcher } from "@/components/app/WorkspaceSwitcher"
-
 type AppShellProps = { children: ReactNode; studio?: boolean }
 export const AppShell = async ({ children, studio = false }: AppShellProps) => {
   const { supabase, user, workspace } = await getPersonalWorkspace()
@@ -13,16 +13,29 @@ export const AppShell = async ({ children, studio = false }: AppShellProps) => {
     getCreditSummary(supabase, workspace.id),
     supabase.from("workspaces").select("id,name"),
   ])
+  const displayName =
+    profile.data?.display_name || user.email?.split("@")[0] || "Creator"
+  if (studio)
+    return (
+      <div className="otter-app studio-app sidebar-studio">
+        <StudioFrame
+          email={user.email || ""}
+          displayName={displayName}
+          workspaceName={workspace.name}
+          workspaceId={workspace.id}
+          workspaces={workspaces.data || []}
+          balance={summary ? unitsToCredits(summary.available_units) : null}
+        >
+          {children}
+        </StudioFrame>
+      </div>
+    )
   return (
-    <div className={`otter-app ${studio ? "studio-app" : "account-app"}`}>
+    <div className="otter-app account-app">
       <AppHeader
-        studio={studio}
         email={user.email || ""}
-        displayName={
-          profile.data?.display_name || user.email?.split("@")[0] || "Creator"
-        }
+        displayName={displayName}
         workspaceName={workspace.name}
-        balance={summary ? unitsToCredits(summary.available_units) : null}
       />
       {(workspaces.data?.length || 0) > 1 && (
         <WorkspaceSwitcher
@@ -30,9 +43,7 @@ export const AppShell = async ({ children, studio = false }: AppShellProps) => {
           current={workspace.id}
         />
       )}
-      <main className={studio ? "studio-main" : "account-main"}>
-        {children}
-      </main>
+      <main className="account-main">{children}</main>
       <footer className="app-footer">
         <span>
           CreativeOtter <span className="otter-spark">✳</span> A home for your
