@@ -3,6 +3,10 @@ import {
   useApp,
   applyDocumentTheme,
 } from "@modelcontextprotocol/ext-apps/react"
+import {
+  refreshGenerationStatus,
+  toolResultData,
+} from "@/lib/mcp/preview-refresh"
 import { ImageGalleryNavigation } from "@/components/generation/ImageGalleryNavigation"
 import {
   gallerySnapshotSchema,
@@ -49,7 +53,7 @@ export const GenerationApp = () => {
     appInfo: { name: "CreativeOtter image", version: "1.0.0" },
     capabilities: {},
     onAppCreated: (bridge) => {
-      bridge.ontoolresult = (result) => accept(result.structuredContent)
+      bridge.ontoolresult = (result) => accept(toolResultData(result))
       bridge.onhostcontextchanged = (context) => {
         if (context.theme) applyDocumentTheme(context.theme)
       }
@@ -68,33 +72,26 @@ export const GenerationApp = () => {
     active.current = true
     setBusy(true)
     try {
-      const result = await app.callServerTool(
-        gallery
-          ? {
-              name: "show_image_gallery",
-              arguments: {
-                title: gallery.title,
-                generations: gallery.items.map((item) => ({
-                  generation_id: item.generation_id,
-                  execution_source: item.execution_source,
-                })),
-              },
-            }
-          : snapshot.execution_source === "native"
+      const updated = await refreshGenerationStatus(app, snapshot)
+      if (gallery)
+        setGallery((previous) =>
+          previous
             ? {
-                name: "get_native_generation",
-                arguments: { generation_id: snapshot.generation_id },
+                ...previous,
+                items: previous.items.map((item) =>
+                  item.generation_id === updated.generation_id &&
+                  item.execution_source === updated.execution_source
+                    ? updated
+                    : item,
+                ),
               }
-            : { name: "check_job", arguments: { quote_id: snapshot.quote_id } },
-      )
-      if (result.isError)
-        setNotice(
-          "Your connection needs attention. Reconnect or reopen this existing image; do not regenerate it.",
+            : previous,
         )
-      else accept(result.structuredContent)
+      else setSnapshot(updated)
+      setNotice("")
     } catch {
       setNotice(
-        "Couldn’t refresh this image. Reconnect CreativeOtter or try again.",
+        "This host couldn’t refresh the saved image. Ask your assistant to reopen this existing result; do not generate it again.",
       )
     } finally {
       active.current = false
@@ -152,7 +149,7 @@ export const GenerationApp = () => {
         },
       })
       const updated = displayAssetSchema.safeParse(
-        result.structuredContent?.asset,
+        (toolResultData(result) as { asset?: unknown } | undefined)?.asset,
       )
       if (result.isError || !updated.success)
         setNotice(

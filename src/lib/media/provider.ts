@@ -1,3 +1,4 @@
+import "server-only"
 import { z } from "zod"
 import type { ImageInput } from "@/lib/media/contracts"
 
@@ -95,7 +96,9 @@ export const createFalImageProvider = (
               output_format: "png",
               limit_generations: true,
               enable_web_search: false,
-              enable_google_search: false,
+              enable_image_search: false,
+              thinking_level: "minimal",
+              sync_mode: false,
               ...(references.length ? { image_urls: references } : {}),
             }),
           },

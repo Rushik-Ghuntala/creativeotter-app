@@ -94,7 +94,10 @@ export const WebGenerationViewer = ({ initial }: WebGenerationViewerProps) => {
         canExpand={Boolean(snapshot.outputs.length)}
         onRefresh={() => void refresh()}
         onReview={() => open(snapshot.job_url || snapshot.review_url)}
-        onDownload={() => open(snapshot.outputs[0]?.download_url || null)}
+        onDownload={() => {
+          const url = snapshot.outputs[0]?.download_url
+          if (url) window.location.assign(url)
+        }}
         onFavorite={() => void toggleFavorite()}
         onExpand={() => open(snapshot.outputs[0]?.url || null)}
         onOpenAsset={(asset) => open(asset.url)}

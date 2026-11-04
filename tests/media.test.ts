@@ -118,6 +118,10 @@ test("provider receipt URLs cannot redirect authenticated fetches to another ori
   assert.equal((await provider.submit(input, [])).requestId, "abc")
   assert.equal(submitted.num_images, 1)
   assert.equal(submitted.enable_web_search, false)
+  assert.equal(submitted.enable_image_search, false)
+  assert.equal(submitted.thinking_level, "minimal")
+  assert.equal(submitted.sync_mode, false)
+  assert.equal("enable_google_search" in submitted, false)
   assert.equal(submitted.output_format, "png")
   assert.equal(isAllowedProviderImage("https://v3.fal.media/file.png"), true)
   assert.equal(
@@ -158,4 +162,32 @@ test("credits preserve integer precision and reject ambiguous monetary data", ()
     creditSummarySchema.safeParse({ available_units: 16000 }).success,
     false,
   )
+})
+
+test("fal reference images use the edit endpoint with the same single-image cost tier", async () => {
+  const references = ["https://example.invalid/private-reference.png"]
+  let submittedUrl = ""
+  let submitted: Record<string, unknown> = {}
+  const provider = createFalImageProvider("fixture", async (url, options) => {
+    submittedUrl = String(url)
+    submitted = JSON.parse(String(options?.body))
+    assert.equal(
+      new Headers(options?.headers).get("Authorization"),
+      "Key fixture",
+    )
+    return Response.json({
+      request_id: "edit-fixture",
+      status_url:
+        "https://queue.fal.run/fal-ai/nano-banana-2/requests/edit-fixture/status",
+      response_url:
+        "https://queue.fal.run/fal-ai/nano-banana-2/requests/edit-fixture",
+    })
+  })
+  await provider.submit(input, references)
+  assert.equal(submittedUrl, "https://queue.fal.run/fal-ai/nano-banana-2/edit")
+  assert.deepEqual(submitted.image_urls, references)
+  assert.equal(submitted.resolution, "1K")
+  assert.equal(submitted.num_images, 1)
+  assert.equal(submitted.thinking_level, "minimal")
+  assert.equal(submitted.enable_image_search, false)
 })

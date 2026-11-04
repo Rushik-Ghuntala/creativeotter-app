@@ -36,3 +36,21 @@ Provider reconciliation occurs on status reads; no background scheduler/webhook 
 ## Verification
 
 Run `yarn test`, `yarn test:media:database`, `yarn test:credits:database`, and `yarn test:native:database`. The database tests provision isolated disposable users/prices and static image bytes, clean them up and never call a native generator or media provider. Native billing tests cover old-route denial, no unapproved uploads, sufficient funds, direct execution on user request, quote binding, concurrent reservations, one-use claims, paid delivery, retry settlement, cancellation, uncertain-result holds and trusted failure release.
+
+## fal setup and deployment
+
+The server uses its existing HTTP queue adapter in `src/lib/media/provider.ts`; no SDK or fal MCP installation is needed. It calls `fal-ai/nano-banana-2` for text prompts and `fal-ai/nano-banana-2/edit` for reference images. The model schemas were checked on 5 November 2026 at the endpoint's `/llms.txt` URL. Requests use one 1K PNG, minimal thinking and no web/image search. fal currently documents $0.08 per standard image; this provider cost is separate from the owner-approved customer price of 16 CreativeOtter credits for both native and API images. Recheck provider pricing before renewing the private pricing record.
+
+Store `FAL_KEY` only in the ignored root `.env` for local use. The fal agent-connect flow described in https://fal.ai/get-started.md can save it after the owner approves in their browser. Keep the file untracked, ignored, not symlinked and permission 600. Never overwrite a configured key or print it. An already-created separate manual key can be used for deployment; another key is unnecessary.
+
+For Claude's hosted MCP, configure server-only `FAL_KEY` and `CREATIVEOTTER_PAID_SERVICES_ENABLED=true` in the Vercel project's Production environment and redeploy. Local configuration alone does not change that endpoint. Keep the local paid-services flag false until workspace activation is intended. The existing workspace provider budget is independent of fal account funds and customer credits; an operator must explicitly configure a positive daily limit. Neither saving a key nor deploying grants credits or changes that budget.
+
+The existing `generate_image` MCP tool opens CreativeOtter's progress/output widget; the backend saves the result privately and settles the bound customer credits once. Account/gallery rendering has been tested in Claude, but a fresh API result, exact 16-credit settlement and actual download must still be tested together after deployment and funded activation. Status polling performs reconciliation; there is no background scheduler.
+
+A present key is not proof of successful authentication or funding. Setup and mocked tests do not submit paid inference. Model requests require fal funds at https://fal.ai/dashboard/usage-billing/credits.
+
+## Embedded preview refresh
+
+Generation widgets first call the host-qualified read-only status tool. If the host cannot proxy that call, they read `creativeotter://generation/{native|provider}/{generation-id}` through the same authenticated MCP connection. The status resource rechecks media access and workspace RLS, never prepares quotes or dispatches queued jobs, and may reconcile only an already-submitted result. No additional browser authentication, public status endpoint or bearer capability is introduced.
+
+The v6 widget retains earlier resource URI aliases for saved conversations. A fresh tool result loads the current widget; an iframe already open before deployment can still contain the old bundle. Preview refresh regression tests cover the Claude IPC-error replay, prefixed tools, text-only results, unrelated-image rejection, and revoked access. Live refresh verification must reuse an existing saved image and confirm unchanged job counts and wallet balance.

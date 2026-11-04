@@ -1,3 +1,4 @@
+import { registerGenerationStatusResource } from "@/lib/mcp/generation-status-resource"
 import { registerStudioTools, STUDIO_TOOLS } from "@/lib/mcp/studio-tools"
 import { registerGalleryTools } from "@/lib/mcp/gallery-tools"
 import { getCreditSummary } from "@/lib/credits/service"
@@ -42,6 +43,7 @@ export const createCreativeOtterMcp = (
   })
   registerAccountResource(server, appUrl)
   if (client) {
+    registerGenerationStatusResource(server, client, context)
     registerMediaTools(server, client, context, appUrl)
     registerNativeTools(server, client, context)
     registerGalleryTools(server, client, context)

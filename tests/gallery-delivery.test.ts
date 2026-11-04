@@ -54,7 +54,7 @@ test("older chat widget URIs still resolve to the registered CreativeOtter viewe
   try {
     for (const uri of [
       "ui://creativeotter/generation.html",
-      ...[1, 2, 3, 4, 5].map(
+      ...[1, 2, 3, 4, 5, 6].map(
         (version) => `ui://creativeotter/generation-v${version}.html`,
       ),
     ]) {
