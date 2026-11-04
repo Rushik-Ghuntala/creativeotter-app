@@ -574,3 +574,9 @@
     height: 78px;
   }
 }
+
+.gen-refresh-status {
+  margin: 0 0 10px;
+  color: #61756b;
+  font-size: 12px;
+}

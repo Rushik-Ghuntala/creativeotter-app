@@ -61,6 +61,7 @@ export const handleMcpRequest = async (request: Request) => {
     getAppUrl(),
     auth.actor.email ?? null,
     auth.supabase,
+    auth.token,
   )
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,

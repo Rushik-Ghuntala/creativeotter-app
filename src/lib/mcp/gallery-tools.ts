@@ -1,3 +1,4 @@
+import { attachPreviewAccess } from "@/lib/mcp/preview-access"
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server"
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import type { SupabaseClient } from "@supabase/supabase-js"
@@ -13,6 +14,7 @@ export const registerGalleryTools = (
   server: McpServer,
   client: SupabaseClient<Database>,
   context: McpContext,
+  previewAccessToken?: string,
 ) => {
   registerAppTool(
     server,
@@ -47,10 +49,14 @@ export const registerGalleryTools = (
     async (args) => {
       try {
         const data = await getImageGallery(client, context.workspace.id, args)
-        return {
-          content: [{ type: "text" as const, text: JSON.stringify(data) }],
-          structuredContent: data,
-        }
+        return attachPreviewAccess(
+          {
+            content: [{ type: "text" as const, text: JSON.stringify(data) }],
+            structuredContent: data,
+          },
+          previewAccessToken,
+          context,
+        )
       } catch (error) {
         return {
           isError: true,

@@ -1,3 +1,4 @@
+import type { PreviewAccess } from "@/lib/mcp/preview-access-contracts"
 import type { App } from "@modelcontextprotocol/ext-apps"
 import {
   generationSnapshotSchema,
@@ -56,6 +57,8 @@ type PreviewBridge = Pick<
 export const refreshGenerationStatus = async (
   app: PreviewBridge,
   snapshot: GenerationSnapshot,
+  access?: PreviewAccess | null,
+  fetcher: typeof fetch = fetch,
 ): Promise<GenerationSnapshot> => {
   const validate = (value: unknown) => {
     const parsed = generationSnapshotSchema.parse(value)
@@ -97,6 +100,47 @@ export const refreshGenerationStatus = async (
         throw new Error("Image status resource was missing")
       return validate(JSON.parse(block.text))
     } catch (resourceError) {
+      if (access) {
+        try {
+          const url = new URL(access.url)
+          const imageOrigin = new URL(
+            snapshot.job_url || snapshot.review_url || "",
+          ).origin
+          if (
+            url.origin !== imageOrigin ||
+            url.pathname !== "/api/preview/status" ||
+            url.username ||
+            url.password ||
+            url.search ||
+            url.hash ||
+            Date.parse(access.expires_at) <= Date.now()
+          )
+            throw new Error("Preview access needs reopening")
+          const response = await fetcher(url.href, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${access.token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              generation_id: snapshot.generation_id,
+              execution_source: snapshot.execution_source,
+            }),
+            credentials: "omit",
+            cache: "no-store",
+            redirect: "error",
+            signal: AbortSignal.timeout(15000),
+          })
+          if (!response.ok)
+            throw new Error("Existing image status is unavailable")
+          return validate(await response.json())
+        } catch (httpError) {
+          throw new AggregateError(
+            [toolError, resourceError, httpError],
+            "Reopen this existing image from your assistant to refresh its preview access.",
+          )
+        }
+      }
       throw new AggregateError(
         [toolError, resourceError],
         "The host could not refresh this saved image. Reopen the existing image from your assistant; do not generate it again.",

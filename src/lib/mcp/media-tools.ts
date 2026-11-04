@@ -1,3 +1,4 @@
+import { attachPreviewAccess } from "@/lib/mcp/preview-access"
 import { z } from "zod"
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server"
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
@@ -69,6 +70,7 @@ export const registerMediaTools = (
   client: SupabaseClient<Database>,
   context: McpContext,
   appUrl: string,
+  previewAccessToken?: string,
 ) => {
   registerGenerationResource(server, appUrl)
   const access = () => getMediaAccess(client, context.workspace.id)
@@ -208,14 +210,18 @@ export const registerMediaTools = (
       },
     },
     async ({ quote_id }) =>
-      safe(async () => {
-        await requireMedia(true)
-        return await startImageGeneration(
-          client,
-          context.workspace.id,
-          quote_id,
-        )
-      }),
+      attachPreviewAccess(
+        await safe(async () => {
+          await requireMedia(true)
+          return await startImageGeneration(
+            client,
+            context.workspace.id,
+            quote_id,
+          )
+        }),
+        previewAccessToken,
+        context,
+      ),
   )
   server.registerTool(
     "check_job",

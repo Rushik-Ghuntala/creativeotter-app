@@ -7,7 +7,7 @@ import {
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { getPublicEnv } from "@/lib/env"
 
-export const GENERATION_RESOURCE_URI = "ui://creativeotter/generation-v6.html"
+export const GENERATION_RESOURCE_URI = "ui://creativeotter/generation-v7.html"
 export const registerGenerationResource = (
   server: McpServer,
   appUrl: string,
@@ -16,12 +16,12 @@ export const registerGenerationResource = (
   const ui = {
     prefersBorder: false,
     domain: appUrl,
-    csp: { connectDomains: [], resourceDomains: [storageOrigin] },
+    csp: { connectDomains: [appUrl], resourceDomains: [storageOrigin] },
   }
   // Older conversations can retain these URIs in their tool descriptors.
   for (const uri of [
     GENERATION_RESOURCE_URI,
-    ...[1, 2, 3, 4, 5].map(
+    ...[1, 2, 3, 4, 5, 6].map(
       (version) => `ui://creativeotter/generation-v${version}.html`,
     ),
     "ui://creativeotter/generation.html",
@@ -47,7 +47,7 @@ export const registerGenerationResource = (
               "openai/widgetPrefersBorder": false,
               "openai/widgetDomain": appUrl,
               "openai/widgetCSP": {
-                connect_domains: [],
+                connect_domains: [appUrl],
                 resource_domains: [storageOrigin],
                 redirect_domains: [appUrl, storageOrigin],
               },

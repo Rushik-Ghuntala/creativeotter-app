@@ -1,3 +1,4 @@
+import { attachPreviewAccess } from "@/lib/mcp/preview-access"
 import { z } from "zod"
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server"
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
@@ -63,6 +64,7 @@ export const registerNativeTools = (
   server: McpServer,
   client: SupabaseClient<Database>,
   context: McpContext,
+  previewAccessToken?: string,
 ) => {
   server.registerTool(
     "resolve_generation_route",
@@ -246,13 +248,17 @@ export const registerNativeTools = (
       },
     },
     async ({ generation_id, execution_token }) =>
-      safely(() =>
-        finishNativeOutput(
-          client,
-          context.workspace.id,
-          generation_id,
-          execution_token,
+      attachPreviewAccess(
+        await safely(() =>
+          finishNativeOutput(
+            client,
+            context.workspace.id,
+            generation_id,
+            execution_token,
+          ),
         ),
+        previewAccessToken,
+        context,
       ),
   )
   server.registerTool(

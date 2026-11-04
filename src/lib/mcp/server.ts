@@ -35,6 +35,7 @@ export const createCreativeOtterMcp = (
   appUrl: string,
   email: string | null = null,
   client?: SupabaseClient<Database>,
+  previewAccessToken?: string,
 ) => {
   const server = new McpServer({
     name: "creativeotter",
@@ -44,9 +45,9 @@ export const createCreativeOtterMcp = (
   registerAccountResource(server, appUrl)
   if (client) {
     registerGenerationStatusResource(server, client, context)
-    registerMediaTools(server, client, context, appUrl)
-    registerNativeTools(server, client, context)
-    registerGalleryTools(server, client, context)
+    registerMediaTools(server, client, context, appUrl, previewAccessToken)
+    registerNativeTools(server, client, context, previewAccessToken)
+    registerGalleryTools(server, client, context, previewAccessToken)
     registerStudioTools(server, client, context, appUrl)
   }
   server.registerTool(

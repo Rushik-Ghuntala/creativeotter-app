@@ -1,3 +1,7 @@
+import {
+  previewAccessFromResult,
+  type PreviewAccess,
+} from "@/lib/mcp/preview-access-contracts"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   useApp,
@@ -28,6 +32,9 @@ export const GenerationApp = () => {
   const snapshot = gallery?.items[selected] || singleSnapshot
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState("")
+  const [refreshed, setRefreshed] = useState(false)
+  const opened = useRef("")
+  const [previewAccess, setPreviewAccess] = useState<PreviewAccess | null>(null)
   const active = useRef(false)
   const deadline = useRef(0)
   const accept = (value: unknown) => {
@@ -53,7 +60,10 @@ export const GenerationApp = () => {
     appInfo: { name: "CreativeOtter image", version: "1.0.0" },
     capabilities: {},
     onAppCreated: (bridge) => {
-      bridge.ontoolresult = (result) => accept(toolResultData(result))
+      bridge.ontoolresult = (result) => {
+        setPreviewAccess(previewAccessFromResult(result))
+        accept(toolResultData(result))
+      }
       bridge.onhostcontextchanged = (context) => {
         if (context.theme) applyDocumentTheme(context.theme)
       }
@@ -72,7 +82,11 @@ export const GenerationApp = () => {
     active.current = true
     setBusy(true)
     try {
-      const updated = await refreshGenerationStatus(app, snapshot)
+      const updated = await refreshGenerationStatus(
+        app,
+        snapshot,
+        previewAccess,
+      )
       if (gallery)
         setGallery((previous) =>
           previous
@@ -89,6 +103,7 @@ export const GenerationApp = () => {
         )
       else setSnapshot(updated)
       setNotice("")
+      setRefreshed(true)
     } catch {
       setNotice(
         "This host couldn’t refresh the saved image. Ask your assistant to reopen this existing result; do not generate it again.",
@@ -97,7 +112,15 @@ export const GenerationApp = () => {
       active.current = false
       setBusy(false)
     }
-  }, [app, isConnected, snapshot, gallery])
+  }, [app, isConnected, snapshot, gallery, previewAccess])
+  useEffect(() => {
+    if (!app || !isConnected || !snapshot || busy) return
+    const key = `${snapshot.execution_source}:${snapshot.generation_id}:${previewAccess?.expires_at || "bridge"}`
+    if (opened.current === key) return
+    opened.current = key
+    setRefreshed(false)
+    void refresh()
+  }, [app, isConnected, snapshot, busy, previewAccess, refresh])
   useEffect(() => {
     if (
       !snapshot ||
@@ -200,6 +223,14 @@ export const GenerationApp = () => {
           onSelect={setSelected}
           onOpenGallery={() => void open(gallery.gallery_url || null)}
         />
+      )}
+      {refreshed && !notice && (
+        <p
+          className="gen-refresh-status"
+          role="status"
+        >
+          Preview up to date
+        </p>
       )}
       <GenerationPanel
         key={snapshot.generation_id}
