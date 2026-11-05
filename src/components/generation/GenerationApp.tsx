@@ -1,3 +1,8 @@
+import {
+  restoreSavedPreviewAccess,
+  rememberSavedPreviewAccess,
+  forgetSavedPreviewAccess,
+} from "@/lib/mcp/preview-cache"
 import { nextPreviewRefreshAt } from "@/lib/mcp/preview-schedule"
 import {
   previewAccessFromResult,
@@ -47,18 +52,19 @@ export const GenerationApp = () => {
       setGallery(collection.data)
       setSelected((index) => Math.min(index, collection.data.items.length - 1))
       setNotice("")
-      return
+      return collection.data.items
     }
     const parsed = generationSnapshotSchema.safeParse(value)
     if (!parsed.success) {
       setNotice(
         "This image response could not be opened. Refresh or reconnect CreativeOtter.",
       )
-      return
+      return []
     }
     setGallery(null)
     setSnapshot(parsed.data)
     setNotice("")
+    return [parsed.data]
   }
   const { app, isConnected, error } = useApp({
     appInfo: { name: "CreativeOtter image", version: "1.0.0" },
@@ -68,8 +74,10 @@ export const GenerationApp = () => {
         opened.current = ""
         retryAfter.current = 0
         deadline.current = 0
-        setPreviewAccess(previewAccessFromResult(result))
-        accept(toolResultData(result))
+        const items = accept(toolResultData(result))
+        setPreviewAccess(
+          restoreSavedPreviewAccess(items, previewAccessFromResult(result)),
+        )
       }
       bridge.onhostcontextchanged = (context) => {
         if (context.theme) applyDocumentTheme(context.theme)
@@ -84,6 +92,10 @@ export const GenerationApp = () => {
     const theme = app?.getHostContext()?.theme
     if (theme) applyDocumentTheme(theme)
   }, [app, isConnected])
+  useEffect(() => {
+    if (snapshot)
+      rememberSavedPreviewAccess(gallery?.items || [snapshot], previewAccess)
+  }, [snapshot, gallery, previewAccess])
   const refresh = useCallback(
     async (all = false) => {
       if (!app || !isConnected || !snapshot || active.current) return null
@@ -131,6 +143,10 @@ export const GenerationApp = () => {
         return updated
       } catch (error) {
         const removed = isPreviewAccessRemoved(error)
+        if (removed) {
+          forgetSavedPreviewAccess(gallery?.items || [snapshot])
+          setPreviewAccess(null)
+        }
         retryAfter.current = removed ? Infinity : Date.now() + 60_000
         setNotice(
           removed
