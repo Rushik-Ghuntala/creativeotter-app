@@ -259,6 +259,7 @@ export const registerNativeTools = (
         ),
         previewAccessToken,
         context,
+        client,
       ),
   )
   server.registerTool(

@@ -1,6 +1,9 @@
 import "server-only"
+import type { SupabaseClient } from "@supabase/supabase-js"
+import type { Database } from "@/lib/database.types"
+import { createSavedPreviewAccess } from "@/lib/mcp/saved-preview"
 import { createHmac } from "node:crypto"
-import { EncryptJWT, jwtDecrypt } from "jose"
+import { EncryptJWT, jwtDecrypt, decodeJwt } from "jose"
 import { z } from "zod"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import type { McpContext } from "@/lib/database.types"
@@ -32,7 +35,7 @@ export const createPreviewAccess = async (
   accessToken: string,
   context: McpContext,
   generations: z.infer<typeof previewReferenceSchema>[],
-): Promise<PreviewAccess> => {
+): Promise<PreviewAccess & { expires_at: string }> => {
   const claims = claimsSchema.parse({
     sub: context.user_id,
     client_id: context.client_id,
@@ -40,7 +43,13 @@ export const createPreviewAccess = async (
     access_token: accessToken,
     generations,
   })
-  const expires = Math.floor(Date.now() / 1000) + 15 * 60
+  const originalExpiry = decodeJwt(accessToken).exp
+  if (!originalExpiry || originalExpiry <= Math.floor(Date.now() / 1000))
+    throw new Error("Original sign-in expired")
+  const expires = Math.min(
+    Math.floor(Date.now() / 1000) + 15 * 60,
+    originalExpiry,
+  )
   const token = await new EncryptJWT(claims)
     .setProtectedHeader({ alg: "dir", enc: "A256GCM", typ: "JWT" })
     .setIssuer(getAppUrl())
@@ -69,9 +78,9 @@ export const attachPreviewAccess = async <T extends CallToolResult>(
   result: T,
   accessToken: string | undefined,
   context: McpContext,
+  client?: SupabaseClient<Database>,
 ): Promise<T> => {
-  if (!accessToken || result.isError || !process.env.SUPABASE_SERVICE_ROLE_KEY)
-    return result
+  if (!accessToken || result.isError) return result
   const single = generationSnapshotSchema.safeParse(result.structuredContent)
   const gallery = gallerySnapshotSchema.safeParse(result.structuredContent)
   const items = single.success
@@ -80,14 +89,15 @@ export const attachPreviewAccess = async <T extends CallToolResult>(
       ? gallery.data.items
       : []
   if (!items.length) return result
-  const access = await createPreviewAccess(
-    accessToken,
-    context,
-    items.map(({ generation_id, execution_source }) => ({
-      generation_id,
-      execution_source,
-    })),
-  )
+  const references = items.map(({ generation_id, execution_source }) => ({
+    generation_id,
+    execution_source,
+  }))
+  const access =
+    client &&
+    items.every((item) => item.state === "succeeded" && item.outputs.length)
+      ? await createSavedPreviewAccess(client, context.workspace.id, references)
+      : await createPreviewAccess(accessToken, context, references)
   return {
     ...result,
     _meta: { ...result._meta, [PREVIEW_ACCESS_META]: access },

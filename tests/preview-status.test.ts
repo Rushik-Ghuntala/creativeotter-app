@@ -1,3 +1,4 @@
+import { UnsecuredJWT } from "jose"
 import test, { after } from "node:test"
 import assert from "node:assert/strict"
 import {
@@ -35,7 +36,9 @@ const context = {
   role: "owner" as const,
   permissions: ["media:read"],
 }
-const originalToken = "fixture-original-oauth-token"
+const originalToken = new UnsecuredJWT({
+  exp: Math.floor(Date.now() / 1000) + 3600,
+}).encode()
 const snapshot = generationSnapshotSchema.parse({
   generation_id: id,
   execution_source: "provider",
@@ -248,4 +251,40 @@ test("HTTP fallback uses only the approved existing-image endpoint, never cookie
     false,
   )
   assert.equal(isPreviewOriginAllowed("null"), true)
+})
+
+test("automatic scoped renewal passes the former 15-minute boundary without extending the OAuth session", async (t) => {
+  const now = Date.now()
+  t.mock.timers.enable({ apis: ["Date"], now })
+  const access = await createPreviewAccess(originalToken, context, [ref])
+  let reads = 0
+  const deps: Deps = {
+    authenticate: async () => auth,
+    readStatus: async () => {
+      reads++
+      return snapshot
+    },
+  }
+  t.mock.timers.tick(14 * 60 * 1000)
+  const response = await handlePreviewStatus(request(access.token), deps)
+  assert.equal(response.status, 200)
+  const renewed = (await response.json())._meta["creativeotter/preview-access"]
+  assert.ok(Date.parse(renewed.expires_at) > Date.parse(access.expires_at))
+  t.mock.timers.tick(2 * 60 * 1000)
+  assert.equal(
+    (await handlePreviewStatus(request(renewed.token), deps)).status,
+    200,
+  )
+  assert.equal(
+    (await handlePreviewStatus(request(access.token), deps)).status,
+    401,
+  )
+  assert.equal(reads, 2)
+  const shortToken = new UnsecuredJWT({
+    exp: Math.floor(Date.now() / 1000) + 10,
+  }).encode()
+  const capped = await createPreviewAccess(shortToken, context, [ref])
+  assert.ok(Date.parse(capped.expires_at) <= Date.now() + 10000)
+  t.mock.timers.tick(11000)
+  await assert.rejects(() => decryptPreviewAccess(capped.token))
 })

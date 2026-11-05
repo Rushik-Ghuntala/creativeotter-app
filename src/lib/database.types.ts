@@ -142,6 +142,27 @@ export type Database = {
     }
     Views: { [_ in never]: never }
     Functions: {
+      create_saved_preview: {
+        Args: {
+          target_workspace: string
+          secret_hash: string
+          generations: Json
+        }
+        Returns: string
+      }
+      read_saved_preview: {
+        Args: {
+          preview_secret: string
+          execution_source: string
+          generation_id: string
+        }
+        Returns: Json
+      }
+      can_read_saved_preview_object: {
+        Args: { object_path: string }
+        Returns: boolean
+      }
+
       list_workspace_members: {
         Args: { target_workspace: string }
         Returns: Json

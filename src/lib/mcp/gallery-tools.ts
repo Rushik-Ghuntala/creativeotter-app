@@ -56,6 +56,7 @@ export const registerGalleryTools = (
           },
           previewAccessToken,
           context,
+          client,
         )
       } catch (error) {
         return {

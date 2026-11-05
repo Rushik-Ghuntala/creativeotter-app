@@ -180,6 +180,7 @@ export const GenerationPanel = ({
             </button>
             <button
               className="gen-download"
+              disabled={busy}
               onClick={onDownload}
             >
               <Download

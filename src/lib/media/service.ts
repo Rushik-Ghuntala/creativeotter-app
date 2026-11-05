@@ -1,14 +1,12 @@
 import "server-only"
+import { buildProviderSnapshot } from "@/lib/media/snapshot-builders"
 import { randomUUID } from "node:crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/database.types"
-import { getAppUrl } from "@/lib/env"
 import { signAsset } from "@/lib/media/assets"
 import { dispatchImageJob, reconcileImageJob } from "@/lib/media/worker"
 import {
-  IMAGE_MODEL,
   imageInputSchema,
-  formatProviderEstimate,
   providerConfigured,
   type GenerationSnapshot,
   type ImageInput,
@@ -128,45 +126,5 @@ export const getGenerationSnapshot = async (
   const assets = await Promise.all(
     (rows.data || []).map((asset) => signAsset(client, asset)),
   )
-  const state =
-    job?.state ||
-    (new Date(quote.expires_at).getTime() < Date.now()
-      ? "expired"
-      : "awaiting_approval")
-  return {
-    generation_id: quote.id,
-    execution_source: "provider",
-    host_name: null,
-    quote_id: quote.id,
-    job_id: job?.id || null,
-    model: IMAGE_MODEL,
-    model_name: "Nano Banana 2",
-    state,
-    input,
-    max_cost_micro_usd: String(quote.max_cost_micro_usd),
-    credit_units:
-      quote.credit_units === null ? null : String(quote.credit_units),
-    credit_status: job?.credit_status || "quoted",
-    credit_pricing_version: quote.credit_pricing_version,
-    estimated_cost_label: formatProviderEstimate(quote.max_cost_micro_usd),
-    pricing_version: quote.pricing_version,
-    expires_at: quote.expires_at,
-    review_url: `${getAppUrl()}/studio/review/${quote.id}`,
-    job_url: job ? `${getAppUrl()}/studio/jobs/${job.id}` : null,
-    references: input.reference_asset_ids.flatMap((id) =>
-      assets.filter((asset) => asset.id === id),
-    ),
-    outputs: job?.output_asset_id
-      ? assets.filter((asset) => asset.id === job.output_asset_id)
-      : [],
-    error: job?.public_error || null,
-    message:
-      state === "succeeded"
-        ? "Image ready and saved in your private CreativeOtter library."
-        : state === "awaiting_approval"
-          ? "Quote prepared without spending credits. For a requested image, the assistant can call generate_image immediately; no browser approval is required."
-          : state === "expired"
-            ? "This quote expired before generation. Prepare a new quote; nothing was submitted for this quote."
-            : "Check this existing request for progress. Do not submit a duplicate generation.",
-  }
+  return buildProviderSnapshot(quote, job, assets)
 }

@@ -1,3 +1,4 @@
+import { nextPreviewRefreshAt } from "@/lib/mcp/preview-schedule"
 import {
   previewAccessFromResult,
   type PreviewAccess,
@@ -9,6 +10,7 @@ import {
 } from "@modelcontextprotocol/ext-apps/react"
 import {
   refreshGenerationStatus,
+  isPreviewAccessRemoved,
   toolResultData,
 } from "@/lib/mcp/preview-refresh"
 import { ImageGalleryNavigation } from "@/components/generation/ImageGalleryNavigation"
@@ -37,6 +39,8 @@ export const GenerationApp = () => {
   const [previewAccess, setPreviewAccess] = useState<PreviewAccess | null>(null)
   const active = useRef(false)
   const deadline = useRef(0)
+  const lastSuccess = useRef(0)
+  const retryAfter = useRef(0)
   const accept = (value: unknown) => {
     const collection = gallerySnapshotSchema.safeParse(value)
     if (collection.success) {
@@ -61,6 +65,9 @@ export const GenerationApp = () => {
     capabilities: {},
     onAppCreated: (bridge) => {
       bridge.ontoolresult = (result) => {
+        opened.current = ""
+        retryAfter.current = 0
+        deadline.current = 0
         setPreviewAccess(previewAccessFromResult(result))
         accept(toolResultData(result))
       }
@@ -77,45 +84,70 @@ export const GenerationApp = () => {
     const theme = app?.getHostContext()?.theme
     if (theme) applyDocumentTheme(theme)
   }, [app, isConnected])
-  const refresh = useCallback(async () => {
-    if (!app || !isConnected || !snapshot || active.current) return
-    active.current = true
-    setBusy(true)
-    try {
-      const updated = await refreshGenerationStatus(
-        app,
-        snapshot,
-        previewAccess,
-      )
-      if (gallery)
-        setGallery((previous) =>
-          previous
-            ? {
-                ...previous,
-                items: previous.items.map((item) =>
-                  item.generation_id === updated.generation_id &&
-                  item.execution_source === updated.execution_source
-                    ? updated
-                    : item,
-                ),
-              }
-            : previous,
+  const refresh = useCallback(
+    async (all = false) => {
+      if (!app || !isConnected || !snapshot || active.current) return null
+      active.current = true
+      setBusy(true)
+      try {
+        const updates = await Promise.all(
+          (all && gallery ? gallery.items : [snapshot]).map((item) =>
+            refreshGenerationStatus(
+              app,
+              item,
+              previewAccess,
+              fetch,
+              setPreviewAccess,
+            ),
+          ),
         )
-      else setSnapshot(updated)
-      setNotice("")
-      setRefreshed(true)
-    } catch {
-      setNotice(
-        "This host couldn’t refresh the saved image. Ask your assistant to reopen this existing result; do not generate it again.",
-      )
-    } finally {
-      active.current = false
-      setBusy(false)
-    }
-  }, [app, isConnected, snapshot, gallery, previewAccess])
+        const updated = updates.find(
+          (item) =>
+            item.generation_id === snapshot.generation_id &&
+            item.execution_source === snapshot.execution_source,
+        )!
+
+        if (gallery)
+          setGallery((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  items: previous.items.map(
+                    (item) =>
+                      updates.find(
+                        (value) =>
+                          value.generation_id === item.generation_id &&
+                          value.execution_source === item.execution_source,
+                      ) || item,
+                  ),
+                }
+              : previous,
+          )
+        else setSnapshot(updated)
+        setNotice("")
+        setRefreshed(true)
+        lastSuccess.current = Date.now()
+        retryAfter.current = 0
+        return updated
+      } catch (error) {
+        const removed = isPreviewAccessRemoved(error)
+        retryAfter.current = removed ? Infinity : Date.now() + 60_000
+        setNotice(
+          removed
+            ? "This gallery’s access was removed or changed. Reconnect CreativeOtter to restore access."
+            : "Couldn’t refresh this saved image yet. We’ll retry automatically when the connection is available.",
+        )
+        return null
+      } finally {
+        active.current = false
+        setBusy(false)
+      }
+    },
+    [app, isConnected, snapshot, gallery, previewAccess],
+  )
   useEffect(() => {
     if (!app || !isConnected || !snapshot || busy) return
-    const key = `${snapshot.execution_source}:${snapshot.generation_id}:${previewAccess?.expires_at || "bridge"}`
+    const key = `${snapshot.execution_source}:${snapshot.generation_id}`
     if (opened.current === key) return
     opened.current = key
     setRefreshed(false)
@@ -143,6 +175,31 @@ export const GenerationApp = () => {
     }, 5000)
     return () => clearInterval(timer)
   }, [snapshot, refresh])
+  useEffect(() => {
+    if (!snapshot || snapshot.state !== "succeeded") return
+    const check = () => {
+      const now = Date.now()
+      if (
+        document.visibilityState === "visible" &&
+        now >= retryAfter.current &&
+        now >=
+          Math.min(
+            ...(gallery?.items || [snapshot]).map((item) =>
+              nextPreviewRefreshAt(item, previewAccess, lastSuccess.current),
+            ),
+          )
+      )
+        void refresh(true)
+    }
+    const timer = setInterval(check, 30_000)
+    document.addEventListener("visibilitychange", check)
+    window.addEventListener("online", check)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener("visibilitychange", check)
+      window.removeEventListener("online", check)
+    }
+  }, [snapshot, gallery, previewAccess, refresh])
   const open = async (url: string | null) => {
     if (!url || !app || !isConnected) return
     try {
@@ -221,6 +278,7 @@ export const GenerationApp = () => {
           selected={selected}
           busy={busy}
           onSelect={setSelected}
+          onRefresh={() => void refresh(true)}
           onOpenGallery={() => void open(gallery.gallery_url || null)}
         />
       )}
@@ -247,7 +305,11 @@ export const GenerationApp = () => {
           ?.availableDisplayModes?.includes("fullscreen")}
         onRefresh={() => void refresh()}
         onReview={() => void open(snapshot.job_url || snapshot.review_url)}
-        onDownload={() => void open(snapshot.outputs[0]?.download_url || null)}
+        onDownload={() => {
+          void refresh().then((updated) => {
+            if (updated) return open(updated.outputs[0]?.download_url || null)
+          })
+        }}
         onFavorite={() => void favorite()}
         onExpand={() => {
           void app

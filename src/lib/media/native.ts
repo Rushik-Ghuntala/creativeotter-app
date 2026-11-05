@@ -1,4 +1,5 @@
 import "server-only"
+import { buildNativeSnapshot } from "@/lib/media/snapshot-builders"
 import { createHash } from "node:crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/database.types"
@@ -156,59 +157,5 @@ export const getNativeSnapshot = async (
   const assets = await Promise.all(
     (rows || []).map((asset) => signAsset(client, asset)),
   )
-  const outputs = assets.filter((asset) => asset.id === native.asset_id)
-  const state =
-    native.state === "awaiting_approval" &&
-    native.expires_at &&
-    new Date(native.expires_at).getTime() < Date.now()
-      ? "expired"
-      : native.state === "rejected"
-        ? "failed"
-        : native.state
-  const message =
-    state === "awaiting_approval"
-      ? "Quote prepared without spending credits. For a requested image, the assistant can claim execution immediately; no browser approval is required."
-      : state === "awaiting_generation"
-        ? "Credits are reserved. Your assistant must claim this execution once before calling its native image tool."
-        : state === "generating"
-          ? "Native execution was claimed. Use this existing attempt; do not start another generation to retry saving."
-          : state === "awaiting_upload"
-            ? "Save the image from the claimed native execution. Credits remain reserved until validated delivery."
-            : state === "succeeded"
-              ? "Native image saved. The displayed billing record is authoritative; host usage limits may also apply."
-              : state === "cancelled"
-                ? "This unclaimed native request was cancelled. Any credit reservation was released."
-                : state === "expired"
-                  ? "This native quote expired before generation. No credits were reserved."
-                  : state === "failed"
-                    ? "Native failure was confirmed. Reserved credits were released."
-                    : "The native outcome needs operator reconciliation. Credits remain reserved; do not regenerate or assume a refund."
-  return {
-    generation_id: native.id,
-    execution_source: "native",
-    quote_id: null,
-    job_id: null,
-    model: "native:image",
-    model_name: native.reported_model || "Native image generation",
-    host_name: native.host_name,
-    state,
-    input,
-    max_cost_micro_usd: null,
-    credit_units:
-      native.credit_units === null ? "0" : String(native.credit_units),
-    credit_status: native.credit_status,
-    credit_pricing_version: native.credit_pricing_version,
-    estimated_cost_label:
-      "CreativeOtter credits apply; no backend provider inference",
-    pricing_version: null,
-    expires_at: native.expires_at,
-    review_url: null,
-    job_url: `${getAppUrl()}/studio/native/${native.id}`,
-    references: input.reference_asset_ids.flatMap((id) =>
-      assets.filter((asset) => asset.id === id),
-    ),
-    outputs: state === "succeeded" ? outputs : [],
-    error: native.public_error,
-    message,
-  }
+  return buildNativeSnapshot(native, assets)
 }

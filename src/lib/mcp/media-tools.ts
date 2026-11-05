@@ -221,6 +221,7 @@ export const registerMediaTools = (
         }),
         previewAccessToken,
         context,
+        client,
       ),
   )
   server.registerTool(

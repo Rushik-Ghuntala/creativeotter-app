@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- Signed media preview runs inside an isolated iframe without Next image optimization. */
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Check, ImageIcon, LoaderCircle, AlertCircle } from "lucide-react"
 import type { GenerationSnapshot } from "@/lib/media/contracts"
 
@@ -12,6 +12,7 @@ export const GenerationOutput = ({
   onRefresh,
 }: GenerationOutputProps) => {
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  const recoveryAttempted = useRef(false)
   const output = snapshot.outputs[0]
   const ready = snapshot.state === "succeeded" && Boolean(output)
   const review = snapshot.state === "awaiting_approval"
@@ -34,7 +35,13 @@ export const GenerationOutput = ({
             className="gen-result-image"
             src={output.url}
             alt={snapshot.input.prompt}
-            onError={() => setFailedUrl(output.url)}
+            onError={() => {
+              setFailedUrl(output.url)
+              if (!recoveryAttempted.current) {
+                recoveryAttempted.current = true
+                onRefresh()
+              }
+            }}
           />
           <span className="gen-saved-badge">
             <Check
@@ -62,7 +69,7 @@ export const GenerationOutput = ({
           </span>
           <h2>
             {ready
-              ? "Refresh your image link"
+              ? "Restoring your saved image"
               : review
                 ? "Your image quote is ready"
                 : snapshot.state === "awaiting_generation"
@@ -79,7 +86,7 @@ export const GenerationOutput = ({
           </h2>
           <p>
             {ready
-              ? "The stored image link needs refreshing. This opens the saved result without generating again."
+              ? "Refreshing its private link automatically. No new image will be generated."
               : snapshot.error || snapshot.message}
           </p>
           <button

@@ -9,6 +9,7 @@ type ImageGalleryNavigationProps = {
   selected: number
   busy: boolean
   onSelect: (index: number) => void
+  onRefresh?: () => void
   onOpenGallery?: () => void
 }
 export const ImageGalleryNavigation = ({
@@ -16,8 +17,10 @@ export const ImageGalleryNavigation = ({
   selected,
   busy,
   onSelect,
+  onRefresh,
   onOpenGallery,
 }: ImageGalleryNavigationProps) => {
+  const recovered = useRef(new Set<string>())
   const thumbnails = useRef<HTMLDivElement>(null)
   useEffect(() => {
     thumbnails.current
@@ -96,6 +99,13 @@ export const ImageGalleryNavigation = ({
               <img
                 src={item.outputs[0].url}
                 alt={`Saved image ${index + 1}`}
+                onError={() => {
+                  const key = `${item.execution_source}:${item.generation_id}`
+                  if (!recovered.current.has(key)) {
+                    recovered.current.add(key)
+                    onRefresh?.()
+                  }
+                }}
               />
               <span>{String(index + 1).padStart(2, "0")}</span>
             </button>

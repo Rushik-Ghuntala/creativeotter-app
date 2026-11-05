@@ -3,11 +3,12 @@ import { galleryRequestSchema } from "@/lib/media/gallery-contracts"
 
 export const previewReferenceSchema =
   galleryRequestSchema.shape.generations.element
+export type PreviewReference = z.infer<typeof previewReferenceSchema>
 export const PREVIEW_ACCESS_META = "creativeotter/preview-access"
 export const previewAccessSchema = z.object({
   url: z.url(),
   token: z.string().min(1).max(20000),
-  expires_at: z.iso.datetime(),
+  expires_at: z.iso.datetime().nullable(),
 })
 export type PreviewAccess = z.infer<typeof previewAccessSchema>
 export const previewAccessFromResult = (result: {

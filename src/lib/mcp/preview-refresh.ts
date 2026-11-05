@@ -1,9 +1,18 @@
-import type { PreviewAccess } from "@/lib/mcp/preview-access-contracts"
+import {
+  previewAccessFromResult,
+  type PreviewAccess,
+} from "@/lib/mcp/preview-access-contracts"
 import type { App } from "@modelcontextprotocol/ext-apps"
 import {
   generationSnapshotSchema,
   type GenerationSnapshot,
 } from "@/lib/media/contracts"
+
+export const isPreviewAccessRemoved = (error: unknown): boolean =>
+  (error instanceof Error &&
+    "accessRemoved" in error &&
+    error.accessRemoved === true) ||
+  (error instanceof AggregateError && error.errors.some(isPreviewAccessRemoved))
 
 const entryTools = [
   "show_image_gallery",
@@ -59,6 +68,7 @@ export const refreshGenerationStatus = async (
   snapshot: GenerationSnapshot,
   access?: PreviewAccess | null,
   fetcher: typeof fetch = fetch,
+  onAccess?: (access: PreviewAccess) => void,
 ): Promise<GenerationSnapshot> => {
   const validate = (value: unknown) => {
     const parsed = generationSnapshotSchema.parse(value)
@@ -69,30 +79,83 @@ export const refreshGenerationStatus = async (
       throw new Error("The refresh returned a different image")
     return parsed
   }
+  const readHttp = async () => {
+    if (!access) throw new Error("Missing scoped preview access")
+    const url = new URL(access.url)
+    const imageOrigin = new URL(snapshot.job_url || snapshot.review_url || "")
+      .origin
+    if (
+      url.origin !== imageOrigin ||
+      url.pathname !== "/api/preview/status" ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash ||
+      (access.expires_at !== null &&
+        Date.parse(access.expires_at) <= Date.now())
+    )
+      throw new Error("Preview access needs reopening")
+    const response = await fetcher(url.href, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${access.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        generation_id: snapshot.generation_id,
+        execution_source: snapshot.execution_source,
+      }),
+      credentials: "omit",
+      cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!response.ok)
+      throw Object.assign(new Error("Existing image status is unavailable"), {
+        accessRemoved: [401, 403].includes(response.status),
+      })
+    const result = await response.json()
+    const updated = validate(result)
+    const renewed = previewAccessFromResult(result)
+    if (renewed) onAccess?.(renewed)
+    return updated
+  }
+  // Saved results have their own revocable read capability. Use it directly so
+  // broken host IPC cannot delay downloads or prevent idle/expiry recovery.
+  if (access?.expires_at === null) return readHttp()
   try {
     const name =
       snapshot.execution_source === "native"
         ? "get_native_generation"
         : "check_job"
-    const result = await app.callServerTool({
-      name: resolvePreviewToolName(
-        name,
-        app.getHostContext()?.toolInfo?.tool.name,
-      ),
-      arguments:
-        snapshot.execution_source === "native"
-          ? { generation_id: snapshot.generation_id }
-          : { quote_id: snapshot.quote_id },
-    })
+    const result = await app.callServerTool(
+      {
+        name: resolvePreviewToolName(
+          name,
+          app.getHostContext()?.toolInfo?.tool.name,
+        ),
+        arguments:
+          snapshot.execution_source === "native"
+            ? { generation_id: snapshot.generation_id }
+            : { quote_id: snapshot.quote_id },
+      },
+      { timeout: 5000, maxTotalTimeout: 5000 },
+    )
     if (result.isError) throw new Error("Image status tool was unavailable")
-    return validate(toolResultData(result))
+    const updated = validate(toolResultData(result))
+    const renewed = previewAccessFromResult(result)
+    if (renewed) onAccess?.(renewed)
+    return updated
   } catch (toolError) {
     try {
       // Some Claude Code builds cannot proxy app tools/call. Resources use
       // the same authenticated MCP connection and workspace authorization.
-      const result = await app.readServerResource({
-        uri: generationStatusUri(snapshot),
-      })
+      const result = await app.readServerResource(
+        {
+          uri: generationStatusUri(snapshot),
+        },
+        { timeout: 5000, maxTotalTimeout: 5000 },
+      )
       const block = result.contents.find(
         (item) => item.mimeType === "application/json" && "text" in item,
       )
@@ -102,38 +165,7 @@ export const refreshGenerationStatus = async (
     } catch (resourceError) {
       if (access) {
         try {
-          const url = new URL(access.url)
-          const imageOrigin = new URL(
-            snapshot.job_url || snapshot.review_url || "",
-          ).origin
-          if (
-            url.origin !== imageOrigin ||
-            url.pathname !== "/api/preview/status" ||
-            url.username ||
-            url.password ||
-            url.search ||
-            url.hash ||
-            Date.parse(access.expires_at) <= Date.now()
-          )
-            throw new Error("Preview access needs reopening")
-          const response = await fetcher(url.href, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${access.token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              generation_id: snapshot.generation_id,
-              execution_source: snapshot.execution_source,
-            }),
-            credentials: "omit",
-            cache: "no-store",
-            redirect: "error",
-            signal: AbortSignal.timeout(15000),
-          })
-          if (!response.ok)
-            throw new Error("Existing image status is unavailable")
-          return validate(await response.json())
+          return await readHttp()
         } catch (httpError) {
           throw new AggregateError(
             [toolError, resourceError, httpError],

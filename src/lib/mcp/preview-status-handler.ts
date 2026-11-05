@@ -1,6 +1,15 @@
 import "server-only"
+import {
+  isSavedPreviewToken,
+  readSavedPreview,
+  createSavedPreviewAccess,
+} from "@/lib/mcp/saved-preview"
 import { authenticateMcp } from "@/lib/mcp/auth"
-import { decryptPreviewAccess } from "@/lib/mcp/preview-access"
+import {
+  createPreviewAccess,
+  decryptPreviewAccess,
+} from "@/lib/mcp/preview-access"
+import { PREVIEW_ACCESS_META } from "@/lib/mcp/preview-access-contracts"
 import { previewReferenceSchema } from "@/lib/mcp/preview-access-contracts"
 import { readExistingGenerationStatus } from "@/lib/media/status"
 import { getAppUrl } from "@/lib/env"
@@ -26,6 +35,8 @@ export const isPreviewOriginAllowed = (origin: string | null) => {
 type Dependencies = {
   authenticate: typeof authenticateMcp
   readStatus: typeof readExistingGenerationStatus
+  readSaved?: typeof readSavedPreview
+  createSaved?: typeof createSavedPreviewAccess
 }
 const dependencies: Dependencies = {
   authenticate: authenticateMcp,
@@ -53,15 +64,6 @@ export const handlePreviewStatus = async (
     request.headers.get("authorization") || "",
   )?.[1]
   if (!token) return json("Reopen this existing image from your assistant", 401)
-  let grant
-  try {
-    grant = await decryptPreviewAccess(token)
-  } catch {
-    return json(
-      "Preview access expired or is invalid. Reopen this existing image from your assistant.",
-      401,
-    )
-  }
   let reference
   try {
     if (Number(request.headers.get("content-length") || 0) > 2048)
@@ -71,6 +73,29 @@ export const handlePreviewStatus = async (
     reference = previewReferenceSchema.parse(JSON.parse(text))
   } catch {
     return json("Invalid image reference", 400)
+  }
+  if (isSavedPreviewToken(token)) {
+    try {
+      const snapshot = await (deps.readSaved || readSavedPreview)(
+        token,
+        reference,
+      )
+      return Response.json(snapshot, { headers })
+    } catch {
+      return json(
+        "Saved image access was removed or the image is unavailable",
+        403,
+      )
+    }
+  }
+  let grant
+  try {
+    grant = await decryptPreviewAccess(token)
+  } catch {
+    return json(
+      "Preview access expired or is invalid. Reopen this existing image from your assistant.",
+      401,
+    )
   }
   if (
     !grant.generations.some(
@@ -109,7 +134,22 @@ export const handlePreviewStatus = async (
       grant.workspace_id,
       reference,
     )
-    return Response.json(snapshot, { headers })
+    const access =
+      snapshot.state === "succeeded" && snapshot.outputs.length
+        ? await (deps.createSaved || createSavedPreviewAccess)(
+            auth.supabase,
+            grant.workspace_id,
+            grant.generations,
+          )
+        : await createPreviewAccess(
+            grant.access_token,
+            context,
+            grant.generations,
+          )
+    return Response.json(
+      { ...snapshot, _meta: { [PREVIEW_ACCESS_META]: access } },
+      { headers },
+    )
   } catch {
     return json("This existing image is unavailable", 403)
   }
