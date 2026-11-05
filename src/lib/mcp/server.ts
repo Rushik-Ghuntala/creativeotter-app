@@ -20,7 +20,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.8.0"
+const productVersion = "0.8.1"
 
 const readOnly = {
   readOnlyHint: true,
@@ -42,8 +42,11 @@ export const createCreativeOtterMcp = (
     title: "CreativeOtter",
     version: productVersion,
   })
+  const hasMediaPermission = context.permissions.some((permission) =>
+    ["media:read", "media:prepare"].includes(permission),
+  )
   registerAccountResource(server, appUrl)
-  if (client) {
+  if (client && hasMediaPermission) {
     registerGenerationStatusResource(server, client, context)
     registerMediaTools(server, client, context, appUrl, previewAccessToken)
     registerNativeTools(server, client, context, previewAccessToken)
@@ -79,7 +82,7 @@ export const createCreativeOtterMcp = (
         enabled_tools: [
           "get_capabilities",
           "manage_account",
-          ...(client
+          ...(client && hasMediaPermission
             ? ["resolve_generation_route", "list_models", "get_model_params"]
             : []),
           ...(access?.enabled && access.can_prepare

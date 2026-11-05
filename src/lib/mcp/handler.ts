@@ -5,7 +5,13 @@ import { createCreativeOtterMcp } from "@/lib/mcp/server"
 import { getAuthChallenge, isAllowedMcpOrigin } from "@/lib/mcp/metadata"
 import { getAppUrl } from "@/lib/env"
 
-export const handleMcpRequest = async (request: Request) => {
+type Dependencies = { authenticate: typeof authenticateMcp }
+const dependencies: Dependencies = { authenticate: authenticateMcp }
+
+export const handleMcpRequest = async (
+  request: Request,
+  deps: Dependencies = dependencies,
+) => {
   const origin = request.headers.get("origin")
   const headers = new Headers({ "Cache-Control": "no-store", Vary: "Origin" })
   if (!isAllowedMcpOrigin(origin))
@@ -22,9 +28,14 @@ export const handleMcpRequest = async (request: Request) => {
   headers.set("Access-Control-Expose-Headers", "WWW-Authenticate")
   if (request.method === "OPTIONS")
     return new Response(null, { status: 204, headers })
-  const auth = await authenticateMcp(request)
+  const auth = await deps.authenticate(request)
   if (!auth) {
-    headers.set("WWW-Authenticate", getAuthChallenge())
+    headers.set(
+      "WWW-Authenticate",
+      getAuthChallenge(
+        request.headers.has("authorization") ? "invalid_token" : undefined,
+      ),
+    )
     return Response.json(
       { error: "Sign in with your CreativeOtter OAuth connection" },
       { status: 401, headers },
@@ -33,14 +44,21 @@ export const handleMcpRequest = async (request: Request) => {
   // RLS and this RPC recheck the current grant and membership on every request.
   const { data: context, error } = await auth.supabase.rpc("get_mcp_context")
   if (error || !context) {
-    const denied = error?.code === "42501" || error?.code === "PGRST301"
+    const denied =
+      (!error && !context) ||
+      error?.code === "42501" ||
+      error?.code === "PGRST301"
+    // An issued token whose app grant was revoked needs a new authorization.
+    // A bare 403 leaves MCP hosts unable to offer their sign-in flow.
+    if (denied)
+      headers.set("WWW-Authenticate", getAuthChallenge("invalid_token"))
     return Response.json(
       {
         error: denied
           ? "Workspace permission is missing or revoked. Reconnect through CreativeOtter."
           : "Workspace access is temporarily unavailable",
       },
-      { status: denied ? 403 : 503, headers },
+      { status: denied ? 401 : 503, headers },
     )
   }
   if (

@@ -13,11 +13,17 @@ const issuer = "https://auth.creativeotter.invalid/auth/v1"
 const resource = "https://creativeotter-app.vercel.app/api/mcp"
 const subject = "10000000-0000-4000-8000-000000000001"
 
-test("consent supports refresh-token access without granting unrelated identity scopes", () => {
+test("consent accepts standard issuer scopes used by MCP clients and rejects custom permissions", () => {
   assert.equal(isSupportedConsentScope("email offline_access"), true)
   assert.equal(isSupportedConsentScope("openid profile email"), true)
-  assert.equal(isSupportedConsentScope("email phone"), false)
+  assert.equal(
+    isSupportedConsentScope("openid profile email phone offline_access"),
+    true,
+  )
+  assert.equal(isSupportedConsentScope("email phone"), true)
   assert.equal(isSupportedConsentScope("account:write"), false)
+  assert.equal(isSupportedConsentScope("email media:prepare"), false)
+  assert.equal(isSupportedConsentScope("email administrator"), false)
 })
 
 test("post-login redirects stay on the application origin", () => {

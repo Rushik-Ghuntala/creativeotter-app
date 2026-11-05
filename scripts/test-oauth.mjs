@@ -6,6 +6,17 @@ let stage = "setup"
 const main = async () => {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL
   const resource = `${new URL(process.env.NEXT_PUBLIC_APP_URL).origin}/api/mcp`
+  const transport = process.env.MCP_TEST_TRANSPORT_URL || resource
+  if (transport !== resource) {
+    const url = new URL(transport)
+    assert.ok(
+      ["localhost", "127.0.0.1"].includes(url.hostname) &&
+        url.protocol === "http:" &&
+        !url.username &&
+        !url.password,
+      "Only a loopback transport override is allowed",
+    )
+  }
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   const admin = createClient(base, process.env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -40,7 +51,18 @@ const main = async () => {
     ).then((r) => r.json())
     assert.ok(discovery.registration_endpoint, "DCR is not enabled")
     const workspaceIds = []
-    for (const label of ["Codex protocol fixture", "Claude protocol fixture"]) {
+    const fixtures = [
+      {
+        label: "Codex default-scope fixture",
+        scope: "openid profile email phone offline_access",
+      },
+      { label: "Claude protocol fixture", scope: "email offline_access" },
+      {
+        label: "Generic OIDC fixture",
+        scope: "openid email profile offline_access",
+      },
+    ]
+    for (const { label, scope } of fixtures) {
       stage = `${label}: dynamic registration`
       const redirectUri = "http://127.0.0.1:43871/callback"
       const registration = await fetch(discovery.registration_endpoint, {
@@ -72,7 +94,7 @@ const main = async () => {
         client_id: client.client_id,
         redirect_uri: redirectUri,
         response_type: "code",
-        scope: "email offline_access",
+        scope,
         state,
         code_challenge: challenge,
         code_challenge_method: "S256",
@@ -95,11 +117,23 @@ const main = async () => {
       assert.ok(id)
       stage = `${label}: deployed consent preserves the opaque request ID`
       const loginRedirect = await fetch(consent, { redirect: "manual" })
+      let loginLocation = loginRedirect.headers.get("location")
+      if (loginRedirect.status === 200 && !loginLocation) {
+        // Next.js inserts a meta redirect after streaming has begun.
+        const html = await loginRedirect.text()
+        const meta = [...html.matchAll(/<meta\b[^>]*>/gi)]
+          .map((match) => match[0])
+          .find((tag) => /http-equiv=["']refresh["']/i.test(tag))
+        const content = meta?.match(/content=["']([^"']+)["']/i)?.[1]
+        loginLocation = content
+          ?.match(/^\d+;\s*url=(.+)$/i)?.[1]
+          ?.replaceAll("&amp;", "&")
+      }
       assert.ok(
-        [302, 303, 307].includes(loginRedirect.status),
+        [200, 302, 303, 307].includes(loginRedirect.status) && loginLocation,
         "A valid opaque authorization ID must reach login, not the fallback page",
       )
-      const login = new URL(loginRedirect.headers.get("location"), consent)
+      const login = new URL(loginLocation, consent)
       assert.equal(login.origin, consent.origin)
       assert.equal(login.pathname, "/auth/login")
       assert.equal(
@@ -151,8 +185,15 @@ const main = async () => {
         token.access_token && token.refresh_token,
         "Access and refresh tokens are required",
       )
-      const call = async (accessToken) => {
-        const result = await fetch(resource, {
+      const call = async (
+        accessToken,
+        method = "tools/call",
+        params = {
+          name: "manage_account",
+          arguments: { section: "overview" },
+        },
+      ) => {
+        const result = await fetch(transport, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -163,16 +204,17 @@ const main = async () => {
           body: JSON.stringify({
             jsonrpc: "2.0",
             id: 1,
-            method: "tools/call",
-            params: {
-              name: "manage_account",
-              arguments: { section: "overview" },
-            },
+            method,
+            params,
           }),
         })
-        return { status: result.status, body: await result.json() }
+        return {
+          status: result.status,
+          body: await result.json(),
+          challenge: result.headers.get("www-authenticate"),
+        }
       }
-      stage = `${label}: authenticated deployed MCP`
+      stage = `${label}: authenticated MCP endpoint`
       const result = await call(token.access_token)
       assert.equal(result.status, 200, "Authenticated MCP request failed")
       assert.equal(
@@ -180,6 +222,13 @@ const main = async () => {
         workspace.data.id,
       )
       workspaceIds.push(result.body.result.structuredContent.workspace.id)
+      stage = `${label}: account-only tool discovery`
+      const beforeTools = await call(token.access_token, "tools/list", {})
+      assert.equal(beforeTools.status, 200)
+      assert.deepEqual(
+        beforeTools.body.result.tools.map((tool) => tool.name).sort(),
+        ["get_capabilities", "manage_account"],
+      )
       stage = `${label}: refresh token`
       const refreshed = await fetch(discovery.token_endpoint, {
         method: "POST",
@@ -198,6 +247,31 @@ const main = async () => {
         200,
         "Refreshed token must retain workspace access",
       )
+      stage = `${label}: explicit fixture media permission and rediscovery`
+      const mediaGrant = await user
+        .from("client_grants")
+        .update({
+          permissions: ["account:read", "media:read", "media:prepare"],
+        })
+        .eq("client_id", client.client_id)
+      assert.equal(mediaGrant.error, null)
+      const mediaTools = await call(updated.access_token, "tools/list", {})
+      assert.equal(mediaTools.status, 200)
+      assert.ok(
+        mediaTools.body.result.tools.some(
+          (tool) => tool.name === "get_native_generation",
+        ),
+      )
+      assert.ok(
+        mediaTools.body.result.tools.some(
+          (tool) => tool.name === "prepare_native_generation",
+        ),
+      )
+      const mediaAccount = await call(updated.access_token)
+      assert.equal(
+        mediaAccount.body.result.structuredContent.workspace.id,
+        workspace.data.id,
+      )
       stage = `${label}: immediate grant revocation`
       assert.equal(
         (
@@ -208,23 +282,25 @@ const main = async () => {
         ).error,
         null,
       )
+      const revoked = await call(updated.access_token)
       assert.equal(
-        (await call(updated.access_token)).status,
-        403,
-        "Revocation must block an already-issued token",
+        revoked.status,
+        401,
+        "Revocation must block an already-issued token and offer reconnect",
       )
+      assert.match(revoked.challenge, /invalid_token/)
       await user.auth.oauth.revokeGrant({ clientId: client.client_id })
       process.stdout.write(
-        `${label}: DCR, PKCE, hook, deployed MCP, refresh and revocation passed.\n`,
+        `${label}: DCR, PKCE, hook, MCP endpoint, refresh and revocation passed.\n`,
       )
     }
     assert.equal(
-      workspaceIds[0],
-      workspaceIds[1],
-      "Both client flows must use the same workspace",
+      new Set(workspaceIds).size,
+      1,
+      "Every client flow must use the same workspace",
     )
     process.stdout.write(
-      "Both client protocol flows resolve to the same workspace. Actual host installation is a separate user sign-in step.\n",
+      "All three client protocol flows resolve to the same workspace. Actual host installation is a separate user sign-in step.\n",
     )
   } finally {
     let cleanupFailed = false

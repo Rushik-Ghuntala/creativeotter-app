@@ -58,7 +58,7 @@ Codex CLI:
 
 ```sh
 codex mcp add creativeotter --url https://creativeotter-app.vercel.app/api/mcp
-codex mcp login creativeotter
+codex mcp login creativeotter --scopes openid,email,offline_access
 ```
 
 Claude Code:
@@ -75,21 +75,21 @@ For the skills repository, from its root:
 npm run build -- --mcp-url https://creativeotter-app.vercel.app/api/mcp
 ```
 
-Use the generated `dist/connected/codex` or `dist/connected/claude` package. Do not globally install/reconfigure clients without the user's request. All 21 skills may be present, but only the two advertised read-only tools are available in this milestone.
+Use the generated `dist/connected/codex` or `dist/connected/claude` package. Do not globally install/reconfigure clients without the user's request. All 21 skills may be present, but the available tool list follows the actual workspace grant and enabled backend capabilities. Account-only access exposes the two read-only account tools; explicitly approved media access adds saved-media and generation tools.
 
 Acceptance checks:
 
 1. Unauthenticated `/api/mcp` returns `401` and a `WWW-Authenticate` challenge naming public metadata.
 2. Both assistants can discover OAuth, sign in, display the consent screen and obtain tokens.
 3. `get_capabilities` and `manage_account` return the same authorized workspace in both clients.
-4. A wrong issuer/audience, a direct web token, a revoked grant or a removed membership cannot read that workspace.
+4. A wrong issuer/audience, a direct web token, a revoked grant or a removed membership cannot read that workspace. Revoked/missing authorization returns a 401 challenge so the assistant can offer reconnect; temporary service errors remain 503.
 5. Disconnect an app from the dashboard and verify its already-issued token immediately loses workspace access.
 
 No generation or credit charge should occur during these checks.
 
 ## Implementation notes
 
-- `email`, `openid` and `profile` are OIDC identity scopes. `offline_access` permits refresh-token connections and is accepted by consent. They do not provide database access; workspace membership and app-level `account:read` grants do that.
+- `email`, `openid`, `profile` and `phone` are standard Supabase OIDC identity scopes. Codex can request all of them by default; consent accepts them and shows any phone identity request. Unknown/custom scopes remain rejected. `offline_access` permits refresh-token connections and is accepted by consent. They do not provide database access; workspace membership and app-level `account:read` grants do that.
 - OAuth approval, session refresh and client registration are handled by Supabase Auth. The app does not implement its own authorization-code or refresh-token store.
 - MCP cookies are ignored; Bearer access tokens are required. User data is queried with the user's token and RLS, not the admin service role.
 - The production app origin is configured explicitly, not derived from a caller's Host header. MCP Origin checks allow the app, ChatGPT and Claude; requests without Origin are accepted only with the normal OAuth checks.
@@ -109,3 +109,15 @@ The production app, callback URL, hosted OAuth server, dynamic registration and 
 Run `yarn build:ui` after changing `src/components/mcp-account/` or `src/lib/mcp/ui/`. Development, tests and production builds run this step automatically. The generated HTML is ignored by Git and explicitly included in Next.js route tracing. When a released UI bundle changes incompatibly, version its resource URI.
 
 Overview, Activity and Settings render the available account state; unavailable billing/media features are labelled rather than populated with invented balances or history. Refresh calls the same read-only tool through the host bridge, and account links use the host's open-link API. UI-capable hosts can display the panel; tools remain usable as structured data in clients without MCP Apps rendering. Refresh the host's MCP tool catalog or start a fresh chat after deployment.
+
+## Connection recovery — 2026-11-05
+
+- Start authorization from the assistant, not the CreativeOtter website. The same web login can approve multiple assistants, each with its own explicit workspace grant.
+- The MCP resource advertises the minimal `email` scope. Manual Codex setup requests `openid,email,offline_access` to obtain identity plus persistent sign-in without unnecessary phone access. Standard clients requesting the issuer's full supported OIDC scope set are also accepted.
+- An expired access token gets a 401 Bearer `invalid_token` challenge. Clients use Supabase's refresh-token endpoint; CreativeOtter never stores a separate copy of their refresh tokens. Missing/revoked workspace grants also get a reconnect challenge. Valid tokens remain subject to current grants, membership, issuer/audience verification and RLS.
+- Consent distinguishes an expired request, unsupported scope, and a retryable provider failure. Media permission remains optional and unchecked for a new authorization. OIDC scopes never grant media permissions. Account-only connections expose only `get_capabilities` and `manage_account`; granting media access enables media tool discovery. Database permission checks still apply to every operation.
+- If a skill is present but tools are missing, check the actual connection/authentication state and media permission first. Do not treat a filesystem plugin installation or `codex mcp list` showing stored OAuth credentials as proof that the current chat can call the server. Verify with `manage_account`.
+- Avoid duplicate manual and plugin connections. Use the installed plugin's connection when present. After upgrading a plugin or changing media access, reload the connection; start a fresh chat only when the host retains its previous tool catalog.
+- Verify with `yarn test:oauth`: disposable Codex-default, Claude, and generic OIDC clients exercise DCR, PKCE, same-workspace access, refresh, explicit media tool rediscovery and revocation. These fixtures do not call generation tools or charge credits. Actual desktop clients must be verified separately with saved images/account reads.
+
+For pre-deployment handler verification, start the production build on loopback and run `MCP_TEST_TRANSPORT_URL=http://127.0.0.1:3019/api/mcp yarn test:oauth`. The override permits only an HTTP localhost/127.0.0.1 transport; OAuth discovery, consent, token exchange and the resource audience remain on the configured hosted origin. This does not verify an unreleased consent UI or a desktop client installation.

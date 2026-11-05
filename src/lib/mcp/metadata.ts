@@ -8,8 +8,8 @@ export const getProtectedResourceMetadata = () => ({
   resource_name: "CreativeOtter",
 })
 
-export const getAuthChallenge = () =>
-  `Bearer resource_metadata="${getAppUrl()}/.well-known/oauth-protected-resource", scope="email"`
+export const getAuthChallenge = (error?: "invalid_token") =>
+  `Bearer resource_metadata="${getAppUrl()}/.well-known/oauth-protected-resource", scope="email"${error ? ', error="invalid_token", error_description="Sign in again to restore CreativeOtter access"' : ""}`
 
 export const isAllowedMcpOrigin = (origin: string | null) => {
   if (!origin) return true
