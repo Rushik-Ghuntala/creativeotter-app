@@ -44,7 +44,6 @@ export const getImageGallery = async (
     title: input.title,
     items,
     total_charged_units: total.toString(),
-    message:
-      "Saved CreativeOtter images. Viewing this gallery does not generate images or spend credits.",
+    message: `Here ${items.length === 1 ? "is your saved image" : `are your ${items.length} saved images`}. You can browse and download ${items.length === 1 ? "it" : "them"} below.`,
   }
 }

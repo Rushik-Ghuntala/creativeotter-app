@@ -1,3 +1,5 @@
+import { CUSTOMER_REPLY_GUIDANCE } from "@/lib/mcp/presentation"
+import { formatCreditUnits } from "@/lib/credits/contracts"
 import { registerGenerationStatusResource } from "@/lib/mcp/generation-status-resource"
 import { registerStudioTools, STUDIO_TOOLS } from "@/lib/mcp/studio-tools"
 import { registerGalleryTools } from "@/lib/mcp/gallery-tools"
@@ -20,7 +22,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.8.6"
+const productVersion = "0.8.7"
 
 const readOnly = {
   readOnlyHint: true,
@@ -37,11 +39,14 @@ export const createCreativeOtterMcp = (
   client?: SupabaseClient<Database>,
   previewAccessToken?: string,
 ) => {
-  const server = new McpServer({
-    name: "creativeotter",
-    title: "CreativeOtter",
-    version: productVersion,
-  })
+  const server = new McpServer(
+    {
+      name: "creativeotter",
+      title: "CreativeOtter",
+      version: productVersion,
+    },
+    { instructions: CUSTOMER_REPLY_GUIDANCE },
+  )
   const hasMediaPermission = context.permissions.some((permission) =>
     ["media:read", "media:prepare"].includes(permission),
   )
@@ -169,7 +174,7 @@ export const createCreativeOtterMcp = (
     {
       title: "Manage account",
       description:
-        "Show the interactive CreativeOtter account panel: connected email, workspace, overview, activity and settings. Use when the user checks their connection or account. Read-only; cannot purchase credits, change settings or approve paid work.",
+        "Show the interactive CreativeOtter account panel: connected email, workspace, overview, activity and settings. Use only when the user asks about their connection, account, balance, activity or settings; a saved-image gallery request belongs to manage_assets and show_image_gallery. Keep the answer brief and user-friendly; never repeat internal IDs or unrelated activity. Read-only; cannot purchase credits, change settings or approve paid work.",
       inputSchema: {
         section: accountSectionSchema.default("overview"),
       },
@@ -236,6 +241,14 @@ export const createCreativeOtterMcp = (
             .slice(0, 10)
         }
       }
+      data.message =
+        section === "overview"
+          ? data.balance
+            ? `You have ${formatCreditUnits(data.balance.available_units)} credits available.`
+            : "Your CreativeOtter account is connected."
+          : section === "activity"
+            ? "Here is your recent activity."
+            : "Here are your account settings."
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data) }],
         structuredContent: data,

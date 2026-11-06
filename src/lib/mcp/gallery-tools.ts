@@ -22,7 +22,7 @@ export const registerGalleryTools = (
     {
       title: "Open CreativeOtter image gallery",
       description:
-        "Show existing saved images together in one CreativeOtter-branded embedded gallery, in the supplied order. Use after completing a carousel, campaign or multiple images, and whenever the user asks to see saved slides together. Pass each returned generation_id and execution_source; provider IDs are quote IDs. This read-only tool never generates, reserves or charges credits. Do not substitute a host Canvas, raw image list or generic gallery when this viewer is available.",
+        "Show existing saved images together in one CreativeOtter-branded embedded gallery, in the supplied order. Use after completing a carousel, campaign or multiple images, and whenever the user asks to see saved slides together. Pass each returned generation_id and execution_source; provider IDs are quote IDs. This read-only tool never generates, reserves or charges credits. Find saved outputs using manage_assets, not the account panel. Present the embedded gallery with one short sentence such as: Here are your three saved images. Keep IDs, execution sources, timestamps, dimensions, link expiry and historical charges out of the reply unless the user explicitly asks. Do not substitute a host Canvas, raw image list or generic gallery when this viewer is available.",
       inputSchema: {
         title: galleryRequestSchema.shape.title,
         generations: galleryRequestSchema.shape.generations,
