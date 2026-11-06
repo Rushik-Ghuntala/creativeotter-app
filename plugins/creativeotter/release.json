@@ -1,0 +1,30 @@
+{
+  "product": "CreativeOtter",
+  "skills_version": "0.5.3",
+  "skill_count_per_plugin": 21,
+  "mcp_url": "https://creativeotter-app.vercel.app/api/mcp",
+  "authentication": "OAuth via each host",
+  "credentials_included": false,
+  "generation_on_install": false,
+  "marketplace_approved": false,
+  "source_repository": "https://github.com/Rushik-Ghuntala/creativeotter-skills",
+  "source_commit": "fcf69c5506b12bca2df107c29db5d2a5cffb1cd1",
+  "source_has_local_changes": false,
+  "archives": [
+    {
+      "filename": "creativeotter-test-kit-v0.5.3.zip",
+      "bytes": 9970553,
+      "sha256": "f13ca63112a35146ec499f99b5b80328226515190bd5be716459cc670da23dc1"
+    },
+    {
+      "filename": "creativeotter-chatgpt-codex-v0.5.3.zip",
+      "bytes": 2457212,
+      "sha256": "71fba5efd17e61e56b77885110a2425a73ca64ae01bd543330539718361ccbc7"
+    },
+    {
+      "filename": "creativeotter-claude-v0.5.3.zip",
+      "bytes": 2455723,
+      "sha256": "c693bf09152421f2b014f0032b6cea3c7c19eedbdc6779aaa81dc349589940ef"
+    }
+  ]
+}

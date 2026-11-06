@@ -73,3 +73,7 @@ See [credit accounting](docs/credit-accounting.md) for pricing configuration, tr
 Saved carousels and multi-image results use the read-only `show_image_gallery` MCP App tool. It presents ordered thumbnails with per-image Output/Inputs, favorites and downloads through the CreativeOtter viewer; reopening results never generates or charges credits.
 
 Older chat tool catalogs may need a connection refresh to discover new MCP tools. The server retains earlier image-widget resource URIs. When embedded discovery is stale, `/studio/gallery` provides the same branded controls for an explicitly ordered `items=source:generation_id,...` selection; it uses the signed-in user's RLS permissions and never groups unrelated private images automatically.
+
+## Plugin test downloads
+
+Ready-to-use plugin ZIPs and installation instructions are in [plugins/creativeotter](plugins/creativeotter/README.md). Rebuild them from the separate skills repository with `yarn package:plugins /absolute/path/to/creativeotter-skills`.
