@@ -17,6 +17,7 @@ const allowed = new Set([
   "prepare_render",
   "render_design",
   "get_render",
+  "get_render_status",
   "list_renders",
 ])
 const info = await stat(configPath)

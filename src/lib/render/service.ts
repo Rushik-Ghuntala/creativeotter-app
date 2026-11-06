@@ -13,6 +13,15 @@ import {
 import { validateRenderInput } from "@/lib/render/sanitize"
 
 type Client = SupabaseClient<Database>
+const renderCreditStatus = (state: RenderJob["state"]) =>
+  state === "quoted"
+    ? "quoted"
+    : state === "succeeded"
+      ? "charged"
+      : state === "failed"
+        ? "released"
+        : "reserved"
+
 export const getRenderAccess = async (client: Client, workspace: string) => {
   if (!renderingEnabled())
     return { available: false, png_credit_units: null, mp4_credit_units: null }
@@ -87,14 +96,7 @@ export const buildRenderSnapshot = async (
     format: job.input.format,
     state: job.state,
     credit_units: String(job.credit_units),
-    credit_status:
-      job.state === "quoted"
-        ? "quoted"
-        : job.state === "succeeded"
-          ? "charged"
-          : job.state === "failed"
-            ? "released"
-            : "reserved",
+    credit_status: renderCreditStatus(job.state),
     width: job.input.width,
     height: job.input.height,
     duration_seconds:
@@ -115,11 +117,7 @@ export const buildRenderSnapshot = async (
             : "We’re rendering your design. It will appear here when it’s ready.",
   }
 }
-export const getRender = async (
-  client: Client,
-  workspace: string,
-  id: string,
-) => {
+const readRenderJob = async (client: Client, workspace: string, id: string) => {
   const { data, error } = await client
     .from("render_jobs")
     .select("*")
@@ -128,7 +126,36 @@ export const getRender = async (
     .single()
   if (error || !data)
     throw new Error("This saved design isn’t available to this account.")
-  return buildRenderSnapshot(client, data)
+  return data
+}
+export const getRender = async (
+  client: Client,
+  workspace: string,
+  id: string,
+) => buildRenderSnapshot(client, await readRenderJob(client, workspace, id))
+
+export const getRenderStatus = async (
+  client: Client,
+  workspace: string,
+  id: string,
+) => {
+  const job = await readRenderJob(client, workspace, id)
+  return {
+    render_id: job.id,
+    title: job.input.title,
+    state: job.state,
+    saved: job.state === "succeeded",
+    credit_units: String(job.credit_units),
+    credit_status: renderCreditStatus(job.state),
+    message:
+      job.state === "succeeded"
+        ? "Your video is ready and saved in the CreativeOtter player above."
+        : job.state === "failed"
+          ? "We couldn’t finish this design. Your reserved credits have been returned."
+          : job.state === "quoted"
+            ? "Your design estimate is ready. No credits have been spent."
+            : "Your video is still rendering. The existing player updates automatically.",
+  }
 }
 export const createRenderPreview = async (client: Client, id: string) => {
   const token = `rp1.${randomBytes(32).toString("base64url")}`

@@ -14,6 +14,7 @@ import { getPublicEnv } from "@/lib/env"
 import { renderInputSchema, renderingEnabled } from "@/lib/render/contracts"
 import {
   getRender,
+  getRenderStatus,
   prepareRender,
   startRender,
   createRenderPreview,
@@ -24,6 +25,7 @@ export const RENDER_TOOLS = [
   "prepare_render",
   "render_design",
   "get_render",
+  "get_render_status",
   "list_renders",
 ]
 export const RENDER_RESOURCE_URI = "ui://creativeotter/render-v2.html"
@@ -140,7 +142,7 @@ export const registerRenderTools = (
     {
       title: "Render design",
       description:
-        "Start the user's requested design directly from its prepared render_id. Reserves the quoted CreativeOtter credits once, renders without fal.ai, saves privately, then charges once on successful delivery. No extra approval needed for an explicit generation request. Repeated calls do not create or charge another render. Poll get_render until ready; show the CreativeOtter preview, not raw HTML or an unbranded gallery.",
+        "Start the user's requested design directly from its prepared render_id. Reserves the quoted CreativeOtter credits once, renders without fal.ai, saves privately, then charges once on successful delivery. No extra approval needed for an explicit generation request. Repeated calls do not create or charge another render. This opens the single CreativeOtter player, which updates automatically. If you need progress checks, use get_render_status; never poll get_render or embed another raw video in the final reply. Reuse this player for the result.",
       inputSchema: { render_id: z.uuid() },
       annotations: { ...read, readOnlyHint: false },
       _meta: previewMeta,
@@ -157,12 +159,29 @@ export const registerRenderTools = (
     {
       title: "Open saved design",
       description:
-        "Read an existing design or refresh its progress and private download. Never starts rendering or spends credits. Keep replies short and friendly; do not expose IDs or processing internals.",
+        "Open the CreativeOtter player only when the user asks to view or reopen an existing saved design. Each model call opens another player: never use this tool for progress polling after render_design. Use get_render_status instead. Widget refresh calls remain supported. Never starts rendering or spends credits. Reply briefly without IDs or a second raw video embed.",
       inputSchema: { render_id: z.uuid() },
       annotations: read,
       _meta: previewMeta,
     },
     ({ render_id }) => safe(() => result(render_id)),
+  )
+  server.registerTool(
+    "get_render_status",
+    {
+      title: "Check design progress",
+      description:
+        "Check an existing render without opening another player. Use for progress polling after render_design; the original CreativeOtter player updates automatically. Returns status only, with no media URLs, preview credential or UI template. Never starts rendering, saves a new file or spends credits. Once saved, reply briefly and refer to the existing player; do not call get_render or embed a duplicate video unless the user asks to reopen it.",
+      inputSchema: { render_id: z.uuid() },
+      annotations: read,
+      _meta: security,
+    },
+    ({ render_id }) =>
+      safe(async () =>
+        customerFacingResult(
+          await getRenderStatus(client, context.workspace.id, render_id),
+        ),
+      ),
   )
   server.registerTool(
     "list_renders",
