@@ -1,6 +1,6 @@
 {
   "product": "CreativeOtter",
-  "skills_version": "0.5.3",
+  "skills_version": "0.5.4",
   "skill_count_per_plugin": 21,
   "mcp_url": "https://creativeotter-app.vercel.app/api/mcp",
   "authentication": "OAuth via each host",
@@ -8,23 +8,33 @@
   "generation_on_install": false,
   "marketplace_approved": false,
   "source_repository": "https://github.com/Rushik-Ghuntala/creativeotter-skills",
-  "source_commit": "fcf69c5506b12bca2df107c29db5d2a5cffb1cd1",
+  "source_commit": "da3374e2e98e0871761fb223cf7d1682b2cfc66f",
   "source_has_local_changes": false,
+  "chatgpt_web": {
+    "registered_app_id": "asdk_app_6aed79fcb8bc819194e28fa8c7bb49dc",
+    "account_scoped_reference": true,
+    "live_install_verified_by_packaging": false
+  },
   "archives": [
     {
-      "filename": "creativeotter-test-kit-v0.5.3.zip",
-      "bytes": 9970553,
-      "sha256": "f13ca63112a35146ec499f99b5b80328226515190bd5be716459cc670da23dc1"
+      "filename": "creativeotter-test-kit-v0.5.4.zip",
+      "bytes": 9971000,
+      "sha256": "4e8c41b1dda8f09acf150471863995dba058538f005ef715affb04568556fad9"
     },
     {
-      "filename": "creativeotter-chatgpt-codex-v0.5.3.zip",
-      "bytes": 2457212,
-      "sha256": "71fba5efd17e61e56b77885110a2425a73ca64ae01bd543330539718361ccbc7"
+      "filename": "creativeotter-codex-desktop-v0.5.4.zip",
+      "bytes": 2457211,
+      "sha256": "c166a96da7f786792e6492b030bb83d6af7693e01f2d8bd024a3e31a1d8e04ed"
     },
     {
-      "filename": "creativeotter-claude-v0.5.3.zip",
-      "bytes": 2455723,
-      "sha256": "c693bf09152421f2b014f0032b6cea3c7c19eedbdc6779aaa81dc349589940ef"
+      "filename": "creativeotter-claude-v0.5.4.zip",
+      "bytes": 2455722,
+      "sha256": "8db3eead2d61443773133251f5ed2b4ac90bdea45e0484ded6695e0e56434aa6"
+    },
+    {
+      "filename": "creativeotter-chatgpt-web-v0.5.4.zip",
+      "bytes": 2456737,
+      "sha256": "77c578624af9321f57d602de39d7d47a01867faca19507929822dcdd9381eee3"
     }
   ]
 }
