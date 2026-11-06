@@ -4,12 +4,14 @@ Use the package matching the assistant. The previous `creativeotter-chatgpt-code
 
 | File                                     | Use                                                                                                         |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `creativeotter-chatgpt-web-v0.9.0.zip`   | ChatGPT web: 21 skills referencing the registered CreativeOtter Web app in the account where it was created |
-| `creativeotter-codex-desktop-v0.9.0.zip` | Codex desktop / CLI: 21 skills and direct MCP configuration                                                 |
-| `creativeotter-claude-v0.9.0.zip`        | Claude Code / compatible plugin upload: 21 skills and direct MCP configuration                              |
-| `creativeotter-test-kit-v0.9.0.zip`      | Extract first for Codex/Claude folders, both desktop upload ZIPs, setup notes and other client examples     |
+| `creativeotter-chatgpt-web-v0.9.1.zip`   | ChatGPT web: 21 skills referencing the registered CreativeOtter Web app in the account where it was created |
+| `creativeotter-codex-desktop-v0.9.1.zip` | Codex desktop / CLI: 21 skills and direct MCP configuration                                                 |
+| `creativeotter-claude-v0.9.1.zip`        | Claude Code / compatible plugin upload: 21 skills and direct MCP configuration                              |
+| `creativeotter-test-kit-v0.9.1.zip`      | Extract first for Codex/Claude folders, both desktop upload ZIPs, setup notes and other client examples     |
 
 No API keys, login sessions, private images or account data are bundled. Installing does not generate media or spend credits. Older ZIPs are removed after a successful release build and remain recoverable from Git history. `SHA256SUMS` covers the current release.
+
+Version 0.9.1 separates motion progress checks from player opening. One CreativeOtter player updates automatically; repeated status checks no longer add cards or a duplicate raw video embed. Tested in Claude using an existing saved video with zero new credits spent. Older cards already recorded in a conversation remain in its history.
 
 Version 0.9.0 adds automatic public-company website artwork discovery through the shared backend. Users can provide the website instead of uploading logo/mascot files; discovered artwork uses existing private media permissions and does not spend credits. See [discovery](../../docs/website-artwork-discovery.md).
 
