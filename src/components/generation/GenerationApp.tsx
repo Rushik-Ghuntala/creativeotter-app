@@ -1,4 +1,4 @@
-import { downloadSavedImage } from "@/lib/mcp/download"
+import { downloadSavedImage, savedImageDownloadUrl } from "@/lib/mcp/download"
 import {
   restoreSavedPreviewAccess,
   rememberSavedPreviewAccess,
@@ -40,6 +40,10 @@ export const GenerationApp = () => {
   const snapshot = gallery?.items[selected] || singleSnapshot
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState("")
+  const [downloadFallback, setDownloadFallback] = useState<{
+    assetId: string
+    url: string
+  } | null>(null)
   const [refreshed, setRefreshed] = useState(false)
   const opened = useRef("")
   const [previewAccess, setPreviewAccess] = useState<PreviewAccess | null>(null)
@@ -322,17 +326,32 @@ export const GenerationApp = () => {
           ?.availableDisplayModes?.includes("fullscreen")}
         onRefresh={() => void refresh()}
         onReview={() => void open(snapshot.job_url || snapshot.review_url)}
+        downloadFallbackUrl={
+          downloadFallback?.assetId === snapshot.outputs[0]?.id
+            ? downloadFallback?.url
+            : undefined
+        }
         onDownload={() => {
+          setDownloadFallback(null)
           void refresh().then(async (updated) => {
             if (!app || !updated?.outputs[0]) return
+            const asset = updated.outputs[0]
+            let fallbackUrl: string
+            try {
+              fallbackUrl = savedImageDownloadUrl(asset)
+            } catch {
+              setNotice(
+                "This image’s download is unavailable. Refresh and try again.",
+              )
+              return
+            }
             try {
               const result = await downloadSavedImage(app, updated.outputs[0])
               if (result.isError)
                 setNotice("The download wasn’t completed. You can try again.")
             } catch {
-              setNotice(
-                "Couldn’t start the download. Try again or use the saved image link in the conversation.",
-              )
+              setDownloadFallback({ assetId: asset.id, url: fallbackUrl })
+              setNotice("Use the link below to download your saved image.")
             }
           })
         }}

@@ -6,10 +6,7 @@ type DownloadBridge = Pick<
   "getHostCapabilities" | "downloadFile" | "openLink"
 >
 
-export const downloadSavedImage = async (
-  app: DownloadBridge,
-  asset: DisplayAsset,
-) => {
+export const savedImageDownloadUrl = (asset: DisplayAsset) => {
   const url = new URL(asset.download_url)
   const preview = new URL(asset.url)
   if (
@@ -21,6 +18,14 @@ export const downloadSavedImage = async (
     url.hash
   )
     throw new Error("Invalid saved image download")
+  return url.href
+}
+
+export const downloadSavedImage = async (
+  app: DownloadBridge,
+  asset: DisplayAsset,
+) => {
+  const url = new URL(savedImageDownloadUrl(asset))
   if (app.getHostCapabilities()?.downloadFile) {
     // A denial/cancellation is final: never open a second dialog behind it.
     return app.downloadFile({

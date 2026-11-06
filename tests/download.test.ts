@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { downloadSavedImage } from "@/lib/mcp/download"
+import { downloadSavedImage, savedImageDownloadUrl } from "@/lib/mcp/download"
 
 const url =
   "https://storage.example.invalid/storage/v1/object/sign/private/image.png?token=fixture"
@@ -92,4 +92,16 @@ test("download cannot substitute a different origin, asset path or non-HTTPS des
       /Invalid saved image download/,
     )
   }
+})
+
+test("explicit download recovery validates the exact saved asset URL", () => {
+  assert.equal(savedImageDownloadUrl(asset), asset.download_url)
+  assert.throws(
+    () =>
+      savedImageDownloadUrl({
+        ...asset,
+        download_url: "https://attacker.invalid/image.png",
+      }),
+    /Invalid saved image download/,
+  )
 })

@@ -16,6 +16,7 @@ type GenerationPanelProps = {
   busy: boolean
   notice: string
   canExpand?: boolean
+  downloadFallbackUrl?: string
   onRefresh: () => void
   onReview: () => void
   onDownload: () => void
@@ -28,6 +29,7 @@ export const GenerationPanel = ({
   busy,
   notice,
   canExpand,
+  downloadFallbackUrl,
   onRefresh,
   onReview,
   onDownload,
@@ -147,6 +149,19 @@ export const GenerationPanel = ({
           role="alert"
         >
           {notice}
+          {downloadFallbackUrl && (
+            <>
+              {" "}
+              <a
+                href={downloadFallbackUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="gen-text-button"
+              >
+                Download saved image
+              </a>
+            </>
+          )}
         </p>
       )}
       <div aria-busy={busy}>
