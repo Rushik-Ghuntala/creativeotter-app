@@ -6,7 +6,9 @@ type DownloadBridge = Pick<
   "getHostCapabilities" | "downloadFile" | "openLink"
 >
 
-export const savedImageDownloadUrl = (asset: DisplayAsset) => {
+export const savedImageDownloadUrl = (
+  asset: Pick<DisplayAsset, "download_url" | "url">,
+) => {
   const url = new URL(asset.download_url)
   const preview = new URL(asset.url)
   if (

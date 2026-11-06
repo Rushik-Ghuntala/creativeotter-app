@@ -2,14 +2,16 @@
 
 Use the package matching the assistant. The previous `creativeotter-chatgpt-codex-v0.5.3.zip` was classified **Desktop only** in ChatGPT web, even with an HTTPS server. It remains here as a historical archive; use the corrected packages below.
 
-| File | Use |
-| --- | --- |
-| `creativeotter-chatgpt-web-v0.6.1.zip` | ChatGPT web: 21 skills referencing the registered CreativeOtter Web app in the account where it was created |
-| `creativeotter-codex-desktop-v0.6.1.zip` | Codex desktop / CLI: 21 skills and direct MCP configuration |
-| `creativeotter-claude-v0.6.1.zip` | Claude Code / compatible plugin upload: 21 skills and direct MCP configuration |
-| `creativeotter-test-kit-v0.6.1.zip` | Extract first for Codex/Claude folders, both desktop upload ZIPs, setup notes and other client examples |
+| File                                     | Use                                                                                                         |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `creativeotter-chatgpt-web-v0.8.0.zip`   | ChatGPT web: 21 skills referencing the registered CreativeOtter Web app in the account where it was created |
+| `creativeotter-codex-desktop-v0.8.0.zip` | Codex desktop / CLI: 21 skills and direct MCP configuration                                                 |
+| `creativeotter-claude-v0.8.0.zip`        | Claude Code / compatible plugin upload: 21 skills and direct MCP configuration                              |
+| `creativeotter-test-kit-v0.8.0.zip`      | Extract first for Codex/Claude folders, both desktop upload ZIPs, setup notes and other client examples     |
 
 No API keys, login sessions, private images or account data are bundled. Installing does not generate media or spend credits. Historical ZIPs retain their original bytes. `SHA256SUMS` covers the current release.
+
+Motion graphics in this release use the opt-in HyperFrames worker, editable project ZIPs and bundled audio/video. This workflow is tested locally; production rendering remains disabled until worker hosting and customer pricing are configured. See [motion implementation](../../docs/hyperframes-motion.md). Installing the ZIP alone does not enable it.
 
 ## ChatGPT web
 
@@ -72,8 +74,12 @@ Checked on 6 November 2026. These are test packages, not public-directory-approv
 
 On 6 November 2026, the v0.5.4 web ZIP was uploaded from this directory into the account containing its registered app. ChatGPT showed **Your cloud plugin**, **Apps 1** and **Skills 21**. After installation, **Try in chat** opened a working account panel and a three-image saved gallery. Gallery navigation, refresh (**Preview up to date**) and one existing-image download completed successfully. No new generation was performed or charged. This is an account-scoped test, not proof of public or cross-account distribution.
 
-## Skills aligned with backend — v0.6.1
+## Skills aligned with backend — v0.8.0
 
 All 21 adapted entry points and their discovery descriptions now match the current backend tools and available provider image model. Video, voice, music, processing and code rendering support preparation only. The original upstream snapshot remains unchanged; unused inherited model guides stay outside active packages. Existing credit and consent behavior remains in place. The account-scoped web package is for private testing, not a public-directory submission package.
 
-The v0.6.1 web archive was updated in the existing test account and exercised in a fresh ChatGPT web chat with everyday prompts: a price-only question, unavailable video and voice requests, a six-shot planning-only request and an existing-image gallery follow-up. Pricing was correctly reported as 16 CreativeOtter credits; unsupported execution was explained without pretending media existed. Planning stayed a written plan and the three-image gallery loaded. No new images or credits were spent. Nine automated checks passed, including 21 everyday prompt schema examples covering all 24 current backend tools. These offline examples do not claim all workflows were executed live; Claude and Codex packages were rebuilt and validated separately.
+The v0.8.0 web archive was updated in the existing test account and exercised in a fresh ChatGPT web chat with everyday prompts: a price-only question, unavailable video and voice requests, a six-shot planning-only request and an existing-image gallery follow-up. Pricing was correctly reported as 16 CreativeOtter credits; unsupported execution was explained without pretending media existed. Planning stayed a written plan and the three-image gallery loaded. No new images or credits were spent. Nine automated checks passed, including 21 everyday prompt schema examples covering all 24 current backend tools. These offline examples do not claim all workflows were executed live; Claude and Codex packages were rebuilt and validated separately.
+
+Version 0.7.1 adds instructions for the opt-in HTML/CSS PNG and CSS-motion MP4 renderer in backend 0.9.0. It is tested locally and stays unavailable on production until its worker, feature flag and workspace prices are enabled. Installing a ZIP does not enable rendering or configure pricing.
+
+The HTML/motion skill is motion-only: animated text, shapes, transitions and logo reveals, delivered as MP4. Still images and static graphics use the image-generation skill.

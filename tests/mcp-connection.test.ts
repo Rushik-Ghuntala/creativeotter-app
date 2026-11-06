@@ -148,3 +148,37 @@ test("live account-only connections expose account tools and media consent enabl
     } else assert.deepEqual(names, ["get_capabilities", "manage_account"])
   }
 })
+
+test("MCP accepts motion-sized messages and rejects oversized bodies", async () => {
+  const context = {
+    user_id: id,
+    client_id: "fixture-client",
+    workspace: { id, name: "Fixture" },
+    role: "owner",
+    permissions: ["account:read"],
+  }
+  for (const [size, expected] of [
+    [100000, 200],
+    [2400001, 413],
+  ]) {
+    const response = await handleMcpRequest(
+      new Request(resource, {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer fixture-token",
+          "Content-Type": "application/json",
+          Accept: "application/json, text/event-stream",
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/list",
+          params: { _meta: { padding: "x".repeat(size) } },
+        }),
+      }),
+      { authenticate: authWithContext(context) },
+    )
+    assert.equal(response.status, expected)
+    if (expected === 200) assert.ok((await response.json()).result.tools.length)
+  }
+})

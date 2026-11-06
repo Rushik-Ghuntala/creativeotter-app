@@ -14,6 +14,7 @@ export const creditSummarySchema = z.object({
       kind: z.enum(["grant", "reserve", "charge", "release"]),
       amount_units: creditUnitsSchema,
       job_id: z.uuid().nullable(),
+      render_job_id: z.uuid().nullable().optional(),
       native_generation_id: z.uuid().nullable().optional(),
       note: z.string(),
       created_at: z.string(),

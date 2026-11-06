@@ -21,6 +21,7 @@ const licenses = (
 ).join("\n\n")
 await mkdir("src/lib/mcp/ui/dist", { recursive: true })
 for (const [name, entry, title] of [
+  ["render", "src/lib/mcp/ui/render-entry.tsx", "CreativeOtter design"],
   ["account", "src/lib/mcp/ui/entry.tsx", "CreativeOtter account"],
   ["generation", "src/lib/mcp/ui/generation-entry.tsx", "CreativeOtter image"],
 ]) {

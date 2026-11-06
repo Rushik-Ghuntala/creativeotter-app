@@ -7,7 +7,9 @@ const eslintConfig = [
     ignores: [
       "node_modules/**",
       ".next/**",
+      ".next-render/**",
       "out/**",
+      "output/hyperframes-tests/**",
       "build/**",
       "next-env.d.ts",
     ],

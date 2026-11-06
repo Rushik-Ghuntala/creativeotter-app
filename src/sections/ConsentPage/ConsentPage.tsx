@@ -121,10 +121,11 @@ const ConsentPage = async ({ searchParams }: ConsentPageProps) => {
                 Also allow media library and requested generation.
               </strong>
               <br />
-              Save private images and references and generate images when you
-              request them. Native and API generation automatically spend
-              CreativeOtter credits at the configured price after a balance
-              check; there is no extra browser approval for each image.
+              Save private media, editable motion projects and references.
+              Create images or motion graphics when you request them and the
+              feature is available. Requested generation uses CreativeOtter
+              credits at the configured price after a balance check, with no
+              extra browser approval for each creation.
             </span>
           </label>
           <Button

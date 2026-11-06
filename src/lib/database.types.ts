@@ -1,3 +1,5 @@
+import type { MotionRevision, MotionSettings } from "@/lib/render/project"
+import type { RenderJob, RenderInput } from "@/lib/render/contracts"
 import type {
   BrandKit,
   StudioCharacter,
@@ -63,6 +65,8 @@ type Table<Row, Insert> = {
 export type Database = {
   public: {
     Tables: {
+      motion_revisions: Table<MotionRevision, Partial<MotionRevision>>
+      render_jobs: Table<RenderJob, Partial<RenderJob>>
       workspace_preferences: Table<
         WorkspacePreferences,
         Partial<WorkspacePreferences>
@@ -89,6 +93,7 @@ export type Database = {
           id: string
           workspace_id: string
           job_id: string | null
+          render_job_id: string | null
           native_generation_id: string | null
           kind: "grant" | "reserve" | "charge" | "release"
           amount_units: number
@@ -142,6 +147,63 @@ export type Database = {
     }
     Views: { [_ in never]: never }
     Functions: {
+      save_motion_revision: {
+        Args: {
+          target_workspace: string
+          title: string
+          settings: MotionSettings
+          source_sha256: string
+          source_bytes: number
+          request_key: string
+          parent_revision?: string | null
+          change_summary?: string
+        }
+        Returns: MotionRevision
+      }
+      get_render_access: {
+        Args: { target_workspace: string }
+        Returns: {
+          available: boolean
+          png_credit_units: string | null
+          mp4_credit_units: string | null
+        }
+      }
+      prepare_render: {
+        Args: {
+          target_workspace: string
+          render_input: RenderInput
+          request_key: string
+        }
+        Returns: RenderJob
+      }
+      start_render: { Args: { target_render: string }; Returns: RenderJob }
+      claim_render: { Args: Record<string, never>; Returns: RenderJob | null }
+      complete_render: {
+        Args: {
+          target_render: string
+          lease: string
+          bytes: number
+          digest: string
+        }
+        Returns: RenderJob
+      }
+      fail_render: {
+        Args: { target_render: string; lease: string }
+        Returns: RenderJob
+      }
+      render_worker_heartbeat: {
+        Args: Record<string, never>
+        Returns: undefined
+      }
+      create_render_preview: {
+        Args: { target_render: string; secret_hash: string }
+        Returns: undefined
+      }
+      read_render_preview: {
+        Args: { preview_secret: string; target_render: string }
+        Returns: RenderJob
+      }
+
       create_saved_preview: {
         Args: {
           target_workspace: string

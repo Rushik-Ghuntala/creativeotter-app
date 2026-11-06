@@ -1,8 +1,10 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
+  distDir: process.env.CREATIVEOTTER_LOCAL_DIST_DIR || ".next",
   outputFileTracingIncludes: {
     "/api/mcp": [
+      "./src/lib/mcp/ui/dist/render.html",
       "./src/lib/mcp/ui/dist/account.html",
       "./src/lib/mcp/ui/dist/generation.html",
     ],

@@ -84,7 +84,7 @@ export const handleMcpRequest = async (
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
-    maxRequestBodySize: 65536,
+    maxRequestBodySize: 2_400_000,
   })
   try {
     await server.connect(transport)

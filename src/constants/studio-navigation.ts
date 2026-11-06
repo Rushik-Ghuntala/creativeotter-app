@@ -20,6 +20,7 @@ export const studioNavigation = [
   {
     label: "Creative tools",
     items: [
+      { href: "/studio/designs", label: "Designs & motion", icon: Palette },
       { href: "/studio/characters", label: "Characters", icon: UsersRound },
       {
         href: "/studio/films",

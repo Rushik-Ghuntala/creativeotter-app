@@ -1,3 +1,6 @@
+import { registerRenderTools, RENDER_TOOLS } from "@/lib/mcp/render-tools"
+import { renderingEnabled } from "@/lib/render/contracts"
+import { getRenderAccess } from "@/lib/render/service"
 import {
   CUSTOMER_REPLY_GUIDANCE,
   customerFacingResult,
@@ -25,7 +28,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.8.10"
+const productVersion = "0.10.0"
 
 const readOnly = {
   readOnlyHint: true,
@@ -65,6 +68,7 @@ export const createCreativeOtterMcp = (
     registerNativeTools(server, client, context, previewAccessToken)
     registerGalleryTools(server, client, context, previewAccessToken)
     registerStudioTools(server, client, context, appUrl)
+    registerRenderTools(server, client, context, appUrl)
   }
   server.registerTool(
     "get_capabilities",
@@ -80,6 +84,11 @@ export const createCreativeOtterMcp = (
       const access = client
         ? await getMediaAccess(client, context.workspace.id)
         : null
+      const render = client
+        ? await getRenderAccess(client, context.workspace.id)
+        : { available: false, png_credit_units: null, mp4_credit_units: null }
+      const renderTools =
+        renderingEnabled() && client && hasMediaPermission ? RENDER_TOOLS : []
       const ready = Boolean(
         access?.enabled &&
         access.can_prepare &&
@@ -95,6 +104,7 @@ export const createCreativeOtterMcp = (
         enabled_tools: [
           "get_capabilities",
           "manage_account",
+          ...renderTools,
           ...(client && hasMediaPermission
             ? ["resolve_generation_route", "list_models", "get_model_params"]
             : []),
@@ -158,7 +168,32 @@ export const createCreativeOtterMcp = (
           provider_fallback: ready ? "image/nano-banana-2" : null,
         },
         setup_url: `${appUrl}/connect`,
-        implemented_categories: ["image"],
+        html_rendering: {
+          ...render,
+          engines: ["css", "hyperframes"],
+          motion_output: "mp4",
+          motion_fps: [12, 24, 25, 30],
+          motion_max_seconds: 30,
+          project_zips: true,
+          editable_revisions: true,
+          saving_revisions_free: true,
+          reopening_and_downloading_free: true,
+          billing_policy:
+            "Only an explicitly requested MP4 render spends the live quoted credits. Saving or revising source, opening previews and downloading existing outputs are free.",
+          bundled_audio_video: true,
+          network_access: false,
+        },
+        render_tools: renderTools,
+        render_formats: render.available
+          ? [
+              ...(render.png_credit_units ? ["png"] : []),
+              ...(render.mp4_credit_units ? ["mp4"] : []),
+            ]
+          : [],
+        implemented_categories: [
+          "image",
+          ...(render.available ? ["html", "motion_graphics"] : []),
+        ],
         unavailable_categories: [
           "video",
           "speech",

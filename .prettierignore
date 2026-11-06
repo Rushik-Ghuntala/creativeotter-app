@@ -1,0 +1,7 @@
+.next/
+.next-render/
+node_modules/
+src/lib/mcp/ui/dist/
+output/render-tests/
+
+output/hyperframes-tests/

@@ -43,7 +43,7 @@ export const AccountSettings = ({
         }
         detail={
           account.permissions.includes("media:prepare")
-            ? "Can save private images and start requested generations using CreativeOtter credits."
+            ? "Can save private media and motion projects, and start available requested generations using CreativeOtter credits."
             : "Enable media access from your account to save images and prepare quotes."
         }
       />

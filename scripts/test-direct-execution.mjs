@@ -48,8 +48,8 @@ try {
       app: `direct-${randomUUID()}`,
       other: `direct-${randomUUID()}`,
     }
-    await sql`insert into private.workspace_generation_limits(workspace_id,enabled,daily_budget_micro_usd) values(${f.id},true,1000000)`
-    await sql`insert into private.workspace_credit_prices(workspace_id,model_key,version,credit_units,valid_until,enabled) values(${f.id},'native:image','direct-fixture',16000,now()+interval '1 hour',true),(${f.id},'image/nano-banana-2','direct-fixture',16000,now()+interval '1 hour',true)`
+    await sql`insert into private.workspace_generation_limits(workspace_id,enabled,daily_budget_micro_usd) values(${f.id},true,1000000) on conflict(workspace_id) do update set enabled=true,daily_budget_micro_usd=excluded.daily_budget_micro_usd`
+    await sql`insert into private.workspace_credit_prices(workspace_id,model_key,version,credit_units,valid_until,enabled) values(${f.id},'native:image','direct-fixture',16000,now()+interval '1 hour',true),(${f.id},'image/nano-banana-2','direct-fixture',16000,now()+interval '1 hour',true) on conflict(workspace_id,model_key) do update set version=excluded.version,credit_units=excluded.credit_units,valid_until=excluded.valid_until,enabled=excluded.enabled`
     for (const clientId of [f.app, f.other])
       assert.equal(
         (

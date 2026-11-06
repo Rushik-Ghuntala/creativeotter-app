@@ -1,0 +1,220 @@
+.otter-render-panel {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e3e8e1;
+  border-radius: 24px;
+  color: #202b25;
+  font-family: Arial, sans-serif;
+  max-width: 900px;
+  margin: auto;
+}
+.otter-render-panel header,
+.otter-render-panel footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.otter-render-brand {
+  font-size: 12px;
+  letter-spacing: 1.3px;
+  color: #778478;
+}
+.otter-render-brand b {
+  color: #cf8051;
+  font-size: 20px;
+}
+.otter-render-panel h2 {
+  font-size: 30px;
+  letter-spacing: -1px;
+  margin: 16px 0 10px;
+}
+.otter-render-sub {
+  font-size: 13px;
+  color: #6e796f;
+}
+.otter-render-sub strong {
+  color: #233c2d;
+}
+.otter-render-canvas {
+  margin: 24px 0 16px;
+  background: #f3f6ef;
+  border: 1px solid #e4e9df;
+  border-radius: 18px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  max-height: 800px;
+}
+.otter-render-canvas img,
+.otter-render-canvas video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.otter-render-canvas p {
+  padding: 32px;
+  text-align: center;
+  line-height: 1.6;
+}
+.otter-render-panel button,
+.render-studio button {
+  border: 0;
+  border-radius: 24px;
+  padding: 11px 20px;
+  background: #173e2c;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+}
+.otter-render-panel header button {
+  background: #f1f5ef;
+  color: #173e2c;
+  font-size: 22px;
+  padding: 6px 14px;
+}
+.otter-render-panel footer span {
+  font-size: 12px;
+  color: #6e796f;
+}
+.otter-render-notice {
+  color: #706442;
+  font-size: 13px;
+}
+.render-studio {
+  display: grid;
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+  gap: 28px;
+}
+.render-studio form,
+.render-studio aside {
+  background: #fff;
+  padding: 24px;
+  border: 1px solid #e3e8e1;
+  border-radius: 22px;
+}
+.render-studio label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.render-studio input,
+.render-studio select,
+.render-studio textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d9e3d8;
+  border-radius: 10px;
+  background: white;
+  color: #25392c;
+  font: inherit;
+}
+.render-studio textarea {
+  min-height: 180px;
+  font-family: monospace;
+  font-size: 12px;
+}
+.render-studio button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.render-studio summary {
+  cursor: pointer;
+  margin: 20px 0;
+}
+.render-studio .saved-design {
+  display: block;
+  text-align: left;
+  width: 100%;
+  margin-top: 10px;
+  background: #eef3eb;
+  color: #173e2c;
+  border-radius: 12px;
+}
+.render-studio h3 {
+  font-size: 20px;
+  letter-spacing: -0.5px;
+}
+.render-studio p {
+  line-height: 1.6;
+  color: #657265;
+  font-size: 14px;
+}
+.render-studio .render-empty {
+  padding: 70px 35px;
+  text-align: center;
+  background: #edf3e8;
+  border-radius: 24px;
+}
+.render-studio .render-empty span {
+  font-size: 50px;
+  color: #a1b98c;
+}
+@media (max-width: 800px) {
+  .render-studio {
+    grid-template-columns: 1fr;
+  }
+  .otter-render-panel {
+    padding: 18px;
+  }
+  .otter-render-panel h2 {
+    font-size: 25px;
+  }
+}
+.motion-editor-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+.motion-editor textarea {
+  width: 100%;
+  min-height: 320px;
+  font: 12px/1.6 monospace;
+  resize: vertical;
+}
+.motion-editor details {
+  margin: 22px 0;
+}
+.motion-editor label {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+.motion-editor input,
+.motion-editor select,
+.motion-editor textarea {
+  border: 1px solid #dce4dc;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fff;
+  color: #173e2c;
+}
+.motion-editor button {
+  padding: 10px 16px;
+  border-radius: 99px;
+  background: #173e2c;
+  color: #fff;
+  border: 0;
+  cursor: pointer;
+}
+.motion-editor button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.motion-editor summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.motion-editor p {
+  color: #64756b;
+  line-height: 1.6;
+}
+.motion-editor [role="alert"] {
+  color: #9a402d;
+}
+.motion-editor h3 {
+  font-size: 22px;
+  letter-spacing: -0.7px;
+}

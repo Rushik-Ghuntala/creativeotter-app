@@ -14,8 +14,15 @@ if (!sourceArgument || argumentsList.length > 1 || (appFlag >= 0 && !appId))
   throw new Error(
     "Usage: yarn package:plugins /path/to/creativeotter-skills [--chatgpt-app-id actual-registered-app-id]",
   )
-if (appId && !/^(asdk_app|connector|templated_apps)_[A-Za-z0-9][A-Za-z0-9_-]{0,199}$/.test(appId))
-  throw new Error("Use the actual registered ChatGPT app ID, not an uploaded plugin ID")
+if (
+  appId &&
+  !/^(asdk_app|connector|templated_apps)_[A-Za-z0-9][A-Za-z0-9_-]{0,199}$/.test(
+    appId,
+  )
+)
+  throw new Error(
+    "Use the actual registered ChatGPT app ID, not an uploaded plugin ID",
+  )
 const source = path.resolve(sourceArgument)
 const config = JSON.parse(
   await readFile(path.join(source, "config/plugin.json"), "utf8"),
@@ -58,7 +65,13 @@ if (appId) {
     cwd: source,
     stdio: "inherit",
   })
-  inputs.push(path.join(source, "releases", `creativeotter-chatgpt-web-v${config.version}.zip`))
+  inputs.push(
+    path.join(
+      source,
+      "releases",
+      `creativeotter-chatgpt-web-v${config.version}.zip`,
+    ),
+  )
 }
 const archives = []
 for (const input of inputs) {
@@ -96,11 +109,13 @@ await writeFile(
           encoding: "utf8",
         }).trim(),
       ),
-      chatgpt_web: appId ? {
-        registered_app_id: appId,
-        account_scoped_reference: true,
-        live_install_verified_by_packaging: false,
-      } : null,
+      chatgpt_web: appId
+        ? {
+            registered_app_id: appId,
+            account_scoped_reference: true,
+            live_install_verified_by_packaging: false,
+          }
+        : null,
       archives,
     },
     null,

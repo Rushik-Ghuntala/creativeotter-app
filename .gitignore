@@ -45,3 +45,9 @@ next-env.d.ts
 
 # Generated self-contained MCP UI bundle
 /src/lib/mcp/ui/dist/
+
+# Parallel local rendering QA
+/.next-render/
+/output/render-tests/
+
+/output/hyperframes-tests/
