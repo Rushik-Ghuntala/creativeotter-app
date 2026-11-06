@@ -21,3 +21,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - New app-level components belong in their own file under `src/components/<feature>/<ComponentName>.tsx`.
 
 <!-- END:code-style-rules -->
+
+# Plugin release hygiene
+
+Keep `plugins/creativeotter/` latest-only. Packaging must finish successfully before deleting old CreativeOtter ZIPs and matching checksums. Retain the current package for each supported client and its release metadata; recover historical versions from Git history instead of keeping them in this folder.

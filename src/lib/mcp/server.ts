@@ -180,6 +180,13 @@ export const createCreativeOtterMcp = (
           reopening_and_downloading_free: true,
           billing_policy:
             "Only an explicitly requested MP4 render spends the live quoted credits. Saving or revising source, opening previews and downloading existing outputs are free.",
+          existing_brand_artwork: {
+            supported: true,
+            image_generation_required: false,
+            saved_image_attachments: true,
+            guidance:
+              "Existing logos, mascots, product images and screenshots are source files, not image-generation requests. Reuse relevant owned library assets or bundle existing files retrieved with the host's browsing/download tools. This requires no fal.ai key or image-generation capability. If retrieval tools fail, explain the retrieval limit and ask for references; do not claim existing artwork cannot be used.",
+          },
           bundled_audio_video: true,
           network_access: false,
         },

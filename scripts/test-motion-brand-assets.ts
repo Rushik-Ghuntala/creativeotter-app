@@ -22,13 +22,50 @@ import { packProject } from "../src/lib/render/project"
 import { runOneRender } from "../src/lib/render/worker"
 import type { Database, McpContext } from "../src/lib/database.types"
 
+type BrandFixture = {
+  name: string
+  prompt: string
+  colors: string[]
+  settings: {
+    width: number
+    height: number
+    duration_seconds: number
+    fps: number
+  }
+  source: string
+  assets: {
+    filename: string
+    role: "logo" | "character" | "product"
+    name: string
+  }[]
+  extra_files?: { path: string; file: string }[]
+}
+
 const main = async () => {
   const directory = process.argv[2]
   const output = process.argv[3]
   if (!directory || !output)
     throw new Error(
-      "Pass local logo.png, hydrogen.webp, copper.webp, silicon.webp directory and output directory",
+      "Pass a local artwork directory, output directory and optional brand fixture JSON",
     )
+  const fixture: BrandFixture = process.argv[4]
+    ? JSON.parse(await readFile(process.argv[4], "utf8"))
+    : {
+        name: "SpaceOffice",
+        prompt: "Make a quick video for spaceoffice.ai.",
+        colors: ["#143c32", "#f8f4ec", "#31c8c4"],
+        settings: { width: 1280, height: 720, duration_seconds: 6, fps: 30 },
+        source: "tests/fixtures/motion-brand-launch.html",
+        assets: [
+          { filename: "logo.png", role: "logo", name: "Logo" },
+          ...["Hydrogen", "Copper", "Silicon"].map((name) => ({
+            filename: `${name.toLowerCase()}.webp`,
+            role: "character" as const,
+            name,
+          })),
+        ],
+      }
+  const prefix = fixture.name.toLowerCase().replace(/[^a-z0-9-]+/g, "-")
   process.env.CREATIVEOTTER_RENDERING_ENABLED = "true"
   const sql = createDatabaseConnection()
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -84,18 +121,18 @@ const main = async () => {
       return creditSummarySchema.parse(result.data)
     }
     const art = []
-    for (const filename of [
-      "logo.png",
-      "hydrogen.webp",
-      "copper.webp",
-      "silicon.webp",
-    ]) {
+    for (const item of fixture.assets) {
+      const { filename } = item
       const bytes = await readFile(path.join(directory, filename))
-      const mime = filename.endsWith(".png") ? "image/png" : "image/webp"
+      const mime = /\.jpe?g$/i.test(filename)
+        ? "image/jpeg"
+        : filename.endsWith(".png")
+          ? "image/png"
+          : "image/webp"
       const upload = await beginMediaUpload(
         client,
         ws,
-        `SpaceOffice ${filename}`,
+        `${fixture.name} ${item.name}`,
         mime,
       )
       mediaPaths.push(upload.path)
@@ -110,7 +147,13 @@ const main = async () => {
         null,
       )
       await finishMediaUpload(client, ws, upload.asset_id)
-      art.push({ asset_id: upload.asset_id, path: `assets/${filename}`, bytes })
+      art.push({
+        asset_id: upload.asset_id,
+        path: `assets/${filename}`,
+        bytes,
+        role: item.role,
+        name: item.name,
+      })
     }
     // Exercise the same current-client grant checks used by real assistant previews.
     const discovery = await (
@@ -212,18 +255,18 @@ const main = async () => {
     await call("manage_themes", {
       action: "save",
       data: {
-        name: "SpaceOffice",
-        colors: ["#143c32", "#f8f4ec", "#31c8c4"],
-        logo_asset_id: art[0].asset_id,
+        name: fixture.name,
+        colors: fixture.colors,
+        logo_asset_id: art.find((a) => a.role === "logo")?.asset_id || null,
       },
     })
-    for (const [index, name] of ["Hydrogen", "Copper", "Silicon"].entries())
+    for (const asset of art.filter((a) => a.role === "character"))
       await call("manage_characters", {
         action: "save",
         data: {
-          name,
+          name: asset.name,
           identity_type: "fictional",
-          reference_asset_id: art[index + 1].asset_id,
+          reference_asset_id: asset.asset_id,
         },
       })
     const themes = await call<{ records: unknown[] }>("manage_themes", {
@@ -238,24 +281,29 @@ const main = async () => {
       limit: 50,
     })
     assert.equal(themes.records.length, 1)
-    assert.equal(characters.records.length, 3)
-    assert.equal(library.assets.length, 4)
+    assert.equal(
+      characters.records.length,
+      art.filter((a) => a.role === "character").length,
+    )
+    assert.equal(library.assets.length, art.length)
     const files = [
       {
         path: "index.html",
-        content: await readFile(
-          "tests/fixtures/motion-brand-launch.html",
-          "utf8",
-        ),
+        content: await readFile(fixture.source, "utf8"),
       },
     ]
+    for (const file of fixture.extra_files || [])
+      files.push({
+        path: file.path,
+        content: await readFile(file.file, "utf8"),
+      })
     const attachments = art.map(({ asset_id, path }) => ({ asset_id, path }))
     await assert.rejects(() =>
       bundleMotionAssets(client, randomUUID(), packProject(files), attachments),
     )
     const args = {
-      title: "SpaceOffice — real brand artwork",
-      settings: { width: 1280, height: 720, duration_seconds: 6, fps: 30 },
+      title: `${fixture.name} — real brand artwork`,
+      settings: fixture.settings,
       request_key: randomUUID(),
       files,
       assets: attachments,
@@ -340,16 +388,21 @@ const main = async () => {
     assert.equal(balance.reserved_units, "0")
     assert.equal(balance.spent_units, "16000")
     await mkdir(output, { recursive: true })
-    await writeFile(path.join(output, "spaceoffice-brand-motion.mp4"), mp4)
+    await writeFile(path.join(output, `${prefix}-brand-motion.mp4`), mp4)
     await writeFile(
-      path.join(output, "spaceoffice-brand-project.zip"),
+      path.join(output, `${prefix}-brand-project.zip`),
       source.zip,
     )
     const report = {
-      prompt: "Make a quick video for spaceoffice.ai.",
+      prompt: fixture.prompt,
       test_scope:
         "Scripted authenticated MCP workflow with real public artwork; not a live assistant routing evaluation",
-      source_discovery: { themes: 1, characters: 3, images: 4 },
+      source_discovery: {
+        themes: themes.records.length,
+        characters: characters.records.length,
+        images: art.length,
+      },
+      settings: fixture.settings,
       exact_assets_bundled: true,
       revisions_preserve_artwork: true,
       duplicate_save_same_revision: true,

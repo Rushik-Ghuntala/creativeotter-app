@@ -1,6 +1,7 @@
 import { readFile, writeFile, stat } from "node:fs/promises"
 import { createInterface } from "node:readline"
 const configPath = process.argv[2]
+const previewResource = "ui://creativeotter-dev/render-v3.html"
 const allowed = new Set([
   "get_capabilities",
   "manage_assets",
@@ -43,8 +44,9 @@ const accessToken = async () => {
     })
     if (!response.ok) throw new Error("Reconnect the development test account")
     const token = await response.json()
+    const current = JSON.parse(await readFile(configPath, "utf8"))
     config = {
-      ...config,
+      ...current,
       access_token: token.access_token,
       refresh_token: token.refresh_token || config.refresh_token,
       expires_at: Date.now() + token.expires_in * 1000,
@@ -57,6 +59,13 @@ const accessToken = async () => {
   return refreshing
 }
 const rewrite = (result, previewOrigin) => {
+  if (
+    [
+      "ui://creativeotter/render-v1.html",
+      "ui://creativeotter/render-v2.html",
+    ].includes(result)
+  )
+    return previewResource
   if (!result || typeof result !== "object") return result
   if (Array.isArray(result))
     return result.map((value) => rewrite(value, previewOrigin))
@@ -70,6 +79,7 @@ const rewrite = (result, previewOrigin) => {
     [
       "ui://creativeotter/render-v1.html",
       "ui://creativeotter/render-v2.html",
+      previewResource,
     ].includes(next.uri) &&
     next._meta
   ) {
@@ -90,6 +100,7 @@ const handle = async (message) => {
         ![
           "ui://creativeotter/render-v1.html",
           "ui://creativeotter/render-v2.html",
+          previewResource,
         ].includes(message.params?.uri))
     )
       throw new Error(
@@ -113,7 +124,18 @@ const handle = async (message) => {
         Accept: "application/json, text/event-stream",
         "MCP-Protocol-Version": protocol,
       },
-      body: JSON.stringify(message),
+      body: JSON.stringify(
+        message.method === "resources/read" &&
+          message.params?.uri === previewResource
+          ? {
+              ...message,
+              params: {
+                ...message.params,
+                uri: "ui://creativeotter/render-v2.html",
+              },
+            }
+          : message,
+      ),
       signal: AbortSignal.timeout(120000),
     })
     if (message.id === undefined) return
@@ -125,11 +147,8 @@ const handle = async (message) => {
         allowed.has(t.name),
       )
     if (message.method === "resources/list" && payload.result?.resources)
-      payload.result.resources = payload.result.resources.filter((r) =>
-        [
-          "ui://creativeotter/render-v1.html",
-          "ui://creativeotter/render-v2.html",
-        ].includes(r.uri),
+      payload.result.resources = payload.result.resources.filter(
+        (r) => r.uri === "ui://creativeotter/render-v2.html",
       )
     const current = JSON.parse(await readFile(configPath, "utf8"))
     const previewOrigin = new URL(current.preview_origin || target.origin)

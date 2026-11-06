@@ -1,3 +1,4 @@
+import { pruneOldPluginArchives } from "./plugin-releases.mjs"
 import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises"
@@ -122,4 +123,5 @@ await writeFile(
     2,
   ) + "\n",
 )
+await pruneOldPluginArchives(destination, config.version)
 process.stdout.write(`CreativeOtter plugin ZIPs saved in ${destination}\n`)
