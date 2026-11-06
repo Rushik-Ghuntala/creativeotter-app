@@ -1,3 +1,4 @@
+import { customerFacingResult } from "@/lib/mcp/presentation"
 import { attachPreviewAccess } from "@/lib/mcp/preview-access"
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server"
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
@@ -50,10 +51,7 @@ export const registerGalleryTools = (
       try {
         const data = await getImageGallery(client, context.workspace.id, args)
         return attachPreviewAccess(
-          {
-            content: [{ type: "text" as const, text: JSON.stringify(data) }],
-            structuredContent: data,
-          },
+          customerFacingResult(data),
           previewAccessToken,
           context,
           client,

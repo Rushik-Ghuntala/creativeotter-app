@@ -1,3 +1,4 @@
+import { customerFacingResult } from "@/lib/mcp/presentation"
 import test from "node:test"
 import assert from "node:assert/strict"
 import { accountSnapshotSchema, createAccountSnapshot } from "@/lib/mcp/account"
@@ -55,4 +56,16 @@ test("account refresh preserves the host's connector namespace", () => {
       `${prefix}manage_account`,
     )
   }
+})
+
+test("customer summaries retain the original structured and restored JSON account payload", () => {
+  const result = customerFacingResult(snapshot)
+  assert.deepEqual(
+    accountSnapshotSchema.parse(result.structuredContent),
+    snapshot,
+  )
+  assert.deepEqual(
+    accountSnapshotSchema.parse(toolResultData({ content: result.content })),
+    snapshot,
+  )
 })

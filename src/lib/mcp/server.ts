@@ -1,4 +1,7 @@
-import { CUSTOMER_REPLY_GUIDANCE } from "@/lib/mcp/presentation"
+import {
+  CUSTOMER_REPLY_GUIDANCE,
+  customerFacingResult,
+} from "@/lib/mcp/presentation"
 import { formatCreditUnits } from "@/lib/credits/contracts"
 import { registerGenerationStatusResource } from "@/lib/mcp/generation-status-resource"
 import { registerStudioTools, STUDIO_TOOLS } from "@/lib/mcp/studio-tools"
@@ -22,7 +25,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.8.7"
+const productVersion = "0.8.8"
 
 const readOnly = {
   readOnlyHint: true,
@@ -249,10 +252,7 @@ export const createCreativeOtterMcp = (
           : section === "activity"
             ? "Here is your recent activity."
             : "Here are your account settings."
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(data) }],
-        structuredContent: data,
-      }
+      return customerFacingResult(data)
     },
   )
   return server

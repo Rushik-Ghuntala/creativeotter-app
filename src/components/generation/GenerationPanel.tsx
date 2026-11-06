@@ -67,7 +67,11 @@ export const GenerationPanel = ({
           </p>
           <h1>{heading}</h1>
           <p className="gen-subtitle">
-            <span>{snapshot.model_name}</span>
+            <span>
+              {snapshot.execution_source === "native"
+                ? "CreativeOtter image"
+                : snapshot.model_name}
+            </span>
             <span className="gen-separator">·</span>
             <strong>
               {snapshot.credit_status === "legacy_no_charge"
@@ -194,11 +198,11 @@ export const GenerationPanel = ({
       )}
       <footer className="gen-footer">
         <p>
-          {snapshot.execution_source === "native"
-            ? snapshot.credit_status === "legacy_no_charge"
-              ? "Historical native test from before credit billing. New native requests require a priced credit reservation before generation."
-              : "Native generation spends CreativeOtter credits. Host usage may also apply. Credits are reserved before execution and charged after saved delivery."
-            : "Provider credits are reserved when generation starts and charged after a saved output. Confirmed failures release the reservation; uncertain outcomes stay reserved for review."}
+          {ready
+            ? "Saved privately in your CreativeOtter library. Viewing and downloading uses no credits."
+            : snapshot.credit_status === "reserved"
+              ? "Your credits are reserved while your image is being created."
+              : "Your image and its credit status will appear here."}
         </p>
         {snapshot.job_url && (
           <button

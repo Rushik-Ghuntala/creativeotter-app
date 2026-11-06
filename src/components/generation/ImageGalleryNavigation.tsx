@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- Private signed thumbnails in the isolated MCP viewer. */
 import { useEffect, useRef } from "react"
 import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react"
-import { formatCreditUnits } from "@/lib/credits/contracts"
 import type { GallerySnapshot } from "@/lib/media/gallery-contracts"
 
 type ImageGalleryNavigationProps = {
@@ -37,9 +36,9 @@ export const ImageGalleryNavigation = ({
           <p className="gen-brand">CreativeOtter ✳ · Gallery</p>
           <h1>{gallery.title}</h1>
           <p className="gen-gallery-summary">
-            {gallery.items.length} saved images ·{" "}
-            {formatCreditUnits(gallery.total_charged_units)} credits charged
-            across these images
+            {gallery.items.length} saved{" "}
+            {gallery.items.length === 1 ? "image" : "images"} · Free to view and
+            download
           </p>
         </div>
         <span
