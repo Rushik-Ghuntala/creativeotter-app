@@ -1,3 +1,4 @@
+import { getLibraryAssets } from "@/lib/media/library"
 import { attachPreviewAccess } from "@/lib/mcp/preview-access"
 import { z } from "zod"
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server"
@@ -304,11 +305,13 @@ export const registerMediaTools = (
     {
       title: "CreativeOtter library",
       description:
-        "Read the latest saved/reference assets, inspect a private asset or update its favorite flag. Never access another workspace or regenerate missing media.",
+        "Find saved images or references, newest first, inspect an asset or update its favorite flag. Each saved output includes gallery_reference with the exact generation_id and execution_source for show_image_gallery. For requests to show saved images together, list kind=output then pass their gallery_reference values to that viewer in order. Never infer generation IDs from asset IDs, search local files or regenerate missing media.",
       inputSchema: {
         action: z.enum(["list", "get", "favorite"]).default("list"),
         asset_id: z.uuid().optional(),
         favorite: z.boolean().optional(),
+        kind: z.enum(["output", "reference"]).optional(),
+        limit: z.number().int().min(1).max(50).default(50),
       },
       annotations: { ...write, idempotentHint: true },
       _meta: {
@@ -317,7 +320,7 @@ export const registerMediaTools = (
         "openai/widgetAccessible": true,
       },
     },
-    async ({ action, asset_id, favorite }) =>
+    async ({ action, asset_id, favorite, kind, limit }) =>
       safe(async () => {
         await requireMedia(action === "favorite")
         if (action === "favorite") {
@@ -330,24 +333,16 @@ export const registerMediaTools = (
           if (error || !data) throw new Error("Unable to update this asset")
           return { asset: await signAsset(client, data) }
         }
-        let query = client
-          .from("media_assets")
-          .select("*")
-          .eq("workspace_id", context.workspace.id)
-          .eq("status", "ready")
-          .order("created_at", { ascending: false })
-          .limit(50)
-        if (action === "get") {
-          if (!asset_id) throw new Error("asset_id is required")
-          query = query.eq("id", asset_id)
-        }
-        const result = await query
-        if (result.error) throw new Error("Unable to open your library")
         return {
-          assets: await Promise.all(
-            (result.data || []).map((asset) => signAsset(client, asset)),
-          ),
-          limit: 50,
+          assets: await getLibraryAssets(client, context.workspace.id, {
+            assetId: action === "get" ? asset_id : undefined,
+            kind,
+            limit,
+            requireAsset: action === "get",
+          }),
+          limit,
+          order: "newest_first",
+          gallery_tool: "show_image_gallery",
           library_url: `${appUrl}/studio/library`,
         }
       }),
