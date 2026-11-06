@@ -5,6 +5,10 @@ import {
   applyDocumentTheme,
 } from "@modelcontextprotocol/ext-apps/react"
 import { ArrowUpRight, RefreshCw } from "lucide-react"
+import {
+  toolResultData,
+  resolvePreviewToolName,
+} from "@/lib/mcp/preview-refresh"
 import { AccountOverview } from "@/components/mcp-account/AccountOverview"
 import { AccountActivity } from "@/components/mcp-account/AccountActivity"
 import { AccountSettings } from "@/components/mcp-account/AccountSettings"
@@ -40,7 +44,7 @@ export const AccountApp = ({ icon }: AccountAppProps) => {
     appInfo: { name: "CreativeOtter Account", version: "1.0.0" },
     capabilities: {},
     onAppCreated: (bridge) => {
-      bridge.ontoolresult = (result) => acceptResult(result.structuredContent)
+      bridge.ontoolresult = (result) => acceptResult(toolResultData(result))
       bridge.ontoolcancelled = () =>
         setNotice(
           "Account loading was cancelled. Reopen it from your assistant.",
@@ -75,7 +79,10 @@ export const AccountApp = ({ icon }: AccountAppProps) => {
     setBusy(true)
     try {
       const result = await app.callServerTool({
-        name: "manage_account",
+        name: resolvePreviewToolName(
+          "manage_account",
+          app.getHostContext()?.toolInfo?.tool.name,
+        ),
         arguments: { section },
       })
       if (result.isError) {
@@ -83,7 +90,7 @@ export const AccountApp = ({ icon }: AccountAppProps) => {
         setNotice(
           "Your connection needs attention. Reconnect CreativeOtter from your assistant.",
         )
-      } else acceptResult(result.structuredContent, false)
+      } else acceptResult(toolResultData(result), false)
     } catch {
       setConnectionIssue(true)
       setNotice(

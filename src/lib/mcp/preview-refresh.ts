@@ -15,6 +15,7 @@ export const isPreviewAccessRemoved = (error: unknown): boolean =>
   (error instanceof AggregateError && error.errors.some(isPreviewAccessRemoved))
 
 const entryTools = [
+  "manage_account",
   "show_image_gallery",
   "get_native_generation",
   "generate_image",
