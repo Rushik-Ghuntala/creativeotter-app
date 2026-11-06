@@ -1,5 +1,7 @@
 import "server-only"
+import { attachPreviewAccess } from "@/lib/mcp/preview-access"
 import { z } from "zod"
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import {
   ResourceTemplate,
   type McpServer,
@@ -12,6 +14,7 @@ export const registerGenerationStatusResource = (
   server: McpServer,
   client: SupabaseClient<Database>,
   context: McpContext,
+  previewAccessToken?: string,
 ) => {
   server.registerResource(
     "CreativeOtter existing image status",
@@ -34,7 +37,14 @@ export const registerGenerationStatusResource = (
           generation_id: id,
         },
       )
+      const result = await attachPreviewAccess(
+        { content: [], structuredContent: snapshot } as CallToolResult,
+        previewAccessToken,
+        context,
+        client,
+      )
       return {
+        _meta: result._meta,
         contents: [
           {
             uri: uri.href,

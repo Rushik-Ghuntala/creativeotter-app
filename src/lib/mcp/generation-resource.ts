@@ -7,7 +7,7 @@ import {
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { getPublicEnv } from "@/lib/env"
 
-export const GENERATION_RESOURCE_URI = "ui://creativeotter/generation-v12.html"
+export const GENERATION_RESOURCE_URI = "ui://creativeotter/generation-v13.html"
 export const registerGenerationResource = (
   server: McpServer,
   appUrl: string,
@@ -21,7 +21,7 @@ export const registerGenerationResource = (
   // Older conversations can retain these URIs in their tool descriptors.
   for (const uri of [
     GENERATION_RESOURCE_URI,
-    ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(
+    ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(
       (version) => `ui://creativeotter/generation-v${version}.html`,
     ),
     "ui://creativeotter/generation.html",

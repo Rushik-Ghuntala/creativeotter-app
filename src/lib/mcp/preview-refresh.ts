@@ -16,6 +16,7 @@ export const isPreviewAccessRemoved = (error: unknown): boolean =>
 
 const entryTools = [
   "manage_account",
+  "check_job",
   "show_image_gallery",
   "get_native_generation",
   "generate_image",
@@ -69,7 +70,7 @@ export const refreshGenerationStatus = async (
   snapshot: GenerationSnapshot,
   access?: PreviewAccess | null,
   fetcher: typeof fetch = fetch,
-  onAccess?: (access: PreviewAccess) => void,
+  onAccess?: (access: PreviewAccess, snapshot: GenerationSnapshot) => void,
 ): Promise<GenerationSnapshot> => {
   const validate = (value: unknown) => {
     const parsed = generationSnapshotSchema.parse(value)
@@ -118,12 +119,21 @@ export const refreshGenerationStatus = async (
     const result = await response.json()
     const updated = validate(result)
     const renewed = previewAccessFromResult(result)
-    if (renewed) onAccess?.(renewed)
+    if (renewed) onAccess?.(renewed, updated)
     return updated
   }
-  // Saved results have their own revocable read capability. Use it directly so
-  // broken host IPC cannot delay downloads or prevent idle/expiry recovery.
-  if (access?.expires_at === null) return readHttp()
+  const failures: unknown[] = []
+  const persistent = access?.expires_at === null
+  if (persistent) {
+    try {
+      return await readHttp()
+    } catch (error) {
+      // Revocation is final. A blocked or temporarily unavailable HTTP path can
+      // still recover through the host's independently authenticated connection.
+      if (isPreviewAccessRemoved(error)) throw error
+      failures.push(error)
+    }
+  }
   try {
     const name =
       snapshot.execution_source === "native"
@@ -145,39 +155,34 @@ export const refreshGenerationStatus = async (
     if (result.isError) throw new Error("Image status tool was unavailable")
     const updated = validate(toolResultData(result))
     const renewed = previewAccessFromResult(result)
-    if (renewed) onAccess?.(renewed)
+    if (renewed) onAccess?.(renewed, updated)
     return updated
-  } catch (toolError) {
+  } catch (error) {
+    failures.push(error)
+  }
+  try {
+    const result = await app.readServerResource(
+      { uri: generationStatusUri(snapshot) },
+      { timeout: 5000, maxTotalTimeout: 5000 },
+    )
+    const block = result.contents.find(
+      (item) => item.mimeType === "application/json" && "text" in item,
+    )
+    if (!block || !("text" in block))
+      throw new Error("Image status resource was missing")
+    const updated = validate(JSON.parse(block.text))
+    const renewed = previewAccessFromResult(result)
+    if (renewed) onAccess?.(renewed, updated)
+    return updated
+  } catch (error) {
+    failures.push(error)
+  }
+  if (access && !persistent) {
     try {
-      // Some Claude Code builds cannot proxy app tools/call. Resources use
-      // the same authenticated MCP connection and workspace authorization.
-      const result = await app.readServerResource(
-        {
-          uri: generationStatusUri(snapshot),
-        },
-        { timeout: 5000, maxTotalTimeout: 5000 },
-      )
-      const block = result.contents.find(
-        (item) => item.mimeType === "application/json" && "text" in item,
-      )
-      if (!block || !("text" in block))
-        throw new Error("Image status resource was missing")
-      return validate(JSON.parse(block.text))
-    } catch (resourceError) {
-      if (access) {
-        try {
-          return await readHttp()
-        } catch (httpError) {
-          throw new AggregateError(
-            [toolError, resourceError, httpError],
-            "Reopen this existing image from your assistant to refresh its preview access.",
-          )
-        }
-      }
-      throw new AggregateError(
-        [toolError, resourceError],
-        "The host could not refresh this saved image. Reopen the existing image from your assistant; do not generate it again.",
-      )
+      return await readHttp()
+    } catch (error) {
+      failures.push(error)
     }
   }
+  throw new AggregateError(failures, "This saved image could not refresh yet.")
 }

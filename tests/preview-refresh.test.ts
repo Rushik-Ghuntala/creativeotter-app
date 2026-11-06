@@ -244,3 +244,152 @@ test("status resource never dispatches a queued existing job and denies revoked 
     }
   }
 })
+
+test("a blocked saved-image HTTP path recovers through the signed-in host and renews private access", async () => {
+  const access = {
+    url: "https://creativeotter-app.vercel.app/api/preview/status",
+    token: "sp1." + "a".repeat(43),
+    expires_at: null,
+  }
+  const renewed = { ...access, token: "sp1." + "b".repeat(43) }
+  const saved = {
+    ...snapshot,
+    job_url: "https://creativeotter-app.vercel.app/studio/jobs/" + id,
+  }
+  const calls: string[] = []
+  let received: unknown
+  const result = await refreshGenerationStatus(
+    bridge({
+      getHostContext: () =>
+        ({
+          toolInfo: {
+            tool: { name: "mcp__creativeotter__complete_native_output" },
+          },
+        }) as ReturnType<Bridge["getHostContext"]>,
+      callServerTool: async ({ name }) => {
+        calls.push(name)
+        return {
+          content: [],
+          structuredContent: saved,
+          _meta: { "creativeotter/preview-access": renewed },
+        }
+      },
+    }),
+    saved,
+    access,
+    async () => {
+      calls.push("http")
+      throw new TypeError("Failed to fetch")
+    },
+    (next) => {
+      received = next
+    },
+  )
+  assert.equal(result.generation_id, id)
+  assert.deepEqual(calls, ["http", "mcp__creativeotter__check_job"])
+  assert.deepEqual(received, renewed)
+})
+
+test("a temporary saved-preview outage can recover through the status resource with renewed access", async () => {
+  const access = {
+    url: "https://creativeotter-app.vercel.app/api/preview/status",
+    token: "sp1." + "a".repeat(43),
+    expires_at: null,
+  }
+  const saved = {
+    ...snapshot,
+    job_url: "https://creativeotter-app.vercel.app/studio/jobs/" + id,
+  }
+  const calls: string[] = []
+  let renewed: unknown
+  const result = await refreshGenerationStatus(
+    bridge({
+      callServerTool: async () => {
+        calls.push("tool")
+        throw new Error("IPC unavailable")
+      },
+      readServerResource: async ({ uri }) => {
+        calls.push("resource")
+        return {
+          contents: [
+            { uri, mimeType: "application/json", text: JSON.stringify(saved) },
+          ],
+          _meta: { "creativeotter/preview-access": access },
+        }
+      },
+    }),
+    saved,
+    access,
+    async () => {
+      calls.push("http")
+      return new Response(null, { status: 503 })
+    },
+    (next) => {
+      renewed = next
+    },
+  )
+  assert.equal(result.generation_id, id)
+  assert.deepEqual(calls, ["http", "tool", "resource"])
+  assert.deepEqual(renewed, access)
+})
+
+test("expired old preview access recovers from the host without retrying its expired credential", async () => {
+  const access = {
+    url: "https://creativeotter-app.vercel.app/api/preview/status",
+    token: "old-expired-delegation",
+    expires_at: "2020-01-01T00:00:00Z",
+  }
+  let http = 0
+  const result = await refreshGenerationStatus(
+    bridge({
+      callServerTool: async () => ({
+        content: [],
+        structuredContent: snapshot,
+      }),
+    }),
+    snapshot,
+    access,
+    async () => {
+      http++
+      throw new Error("Expired credential must not be used")
+    },
+  )
+  assert.equal(result.generation_id, id)
+  assert.equal(http, 0)
+})
+
+test("explicit saved-preview revocation never falls back to another access channel", async () => {
+  const access = {
+    url: "https://creativeotter-app.vercel.app/api/preview/status",
+    token: "sp1." + "a".repeat(43),
+    expires_at: null,
+  }
+  let hosts = 0
+  const saved = {
+    ...snapshot,
+    job_url: "https://creativeotter-app.vercel.app/studio/jobs/" + id,
+  }
+  await assert.rejects(
+    () =>
+      refreshGenerationStatus(
+        bridge({
+          callServerTool: async () => {
+            hosts++
+            return { content: [], structuredContent: saved }
+          },
+        }),
+        saved,
+        access,
+        async () => new Response(null, { status: 403 }),
+      ),
+    (error: unknown) => {
+      assert.ok(
+        error instanceof Error &&
+          "accessRemoved" in error &&
+          error.accessRemoved === true,
+      )
+      return true
+    },
+  )
+  assert.equal(hosts, 0)
+})

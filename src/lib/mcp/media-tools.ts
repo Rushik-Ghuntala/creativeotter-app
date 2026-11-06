@@ -240,14 +240,19 @@ export const registerMediaTools = (
       },
     },
     async ({ quote_id }) =>
-      safe(async () => {
-        await requireMedia()
-        return await getGenerationSnapshot(
-          client,
-          context.workspace.id,
-          quote_id,
-        )
-      }),
+      attachPreviewAccess(
+        await safe(async () => {
+          await requireMedia()
+          return await getGenerationSnapshot(
+            client,
+            context.workspace.id,
+            quote_id,
+          )
+        }),
+        previewAccessToken,
+        context,
+        client,
+      ),
   )
   server.registerTool(
     "create_upload_url",

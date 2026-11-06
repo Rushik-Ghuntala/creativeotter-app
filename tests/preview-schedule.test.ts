@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import {
   signedUrlExpiresAt,
   nextPreviewRefreshAt,
+  shouldRefreshPreview,
 } from "@/lib/mcp/preview-schedule"
 import { generationSnapshotSchema } from "@/lib/media/contracts"
 import { refreshGenerationStatus } from "@/lib/mcp/preview-refresh"
@@ -101,4 +102,17 @@ test("HTTP renewal updates hidden access while returning only the same saved ima
   assert.equal(read.generation_id, id)
   assert.equal(read.credit_status, "charged")
   assert.equal("_meta" in read, false)
+})
+
+test("a failed refresh retries on its backoff even while the previous URL is still fresh", () => {
+  const scheduled = now + 45 * 60 * 1000
+  const retry = now + 60 * 1000
+  assert.equal(shouldRefreshPreview(now, retry, scheduled), false)
+  assert.equal(shouldRefreshPreview(retry, retry, scheduled), true)
+  assert.equal(shouldRefreshPreview(retry, 0, scheduled), false)
+  assert.equal(shouldRefreshPreview(scheduled, 0, scheduled), true)
+  assert.equal(
+    shouldRefreshPreview(scheduled + 1000, Infinity, scheduled),
+    false,
+  )
 })

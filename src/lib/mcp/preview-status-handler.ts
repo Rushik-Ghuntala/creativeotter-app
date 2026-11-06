@@ -19,11 +19,17 @@ export const isPreviewOriginAllowed = (origin: string | null) => {
   try {
     const url = new URL(origin)
     return (
-      url.protocol === "https:" &&
+      (url.protocol === "https:" ||
+        (url.protocol === "codex-sandbox:" &&
+          /^mcp-app-[a-z0-9-]+\.web-sandbox\.oaiusercontent\.com$/.test(
+            url.hostname,
+          ))) &&
       !url.port &&
       !url.username &&
       !url.password &&
-      url.pathname === "/" &&
+      ["", "/"].includes(url.pathname) &&
+      !url.search &&
+      !url.hash &&
       (["https://claude.ai", "https://chatgpt.com"].includes(origin) ||
         url.hostname.endsWith(".claudemcpcontent.com") ||
         url.hostname.endsWith(".oaiusercontent.com"))

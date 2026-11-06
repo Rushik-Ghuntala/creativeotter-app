@@ -36,3 +36,11 @@ export const nextPreviewRefreshAt = (
       : []),
   )
 }
+
+// A failed manual/initial refresh must retry on its backoff deadline even if
+// the last successful URL would otherwise not be due for another 45 minutes.
+export const shouldRefreshPreview = (
+  now: number,
+  retryAt: number,
+  scheduledAt: number,
+) => Number.isFinite(retryAt) && now >= (retryAt > 0 ? retryAt : scheduledAt)

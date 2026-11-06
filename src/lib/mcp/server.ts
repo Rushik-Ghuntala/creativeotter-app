@@ -25,7 +25,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.8.9"
+const productVersion = "0.8.10"
 
 const readOnly = {
   readOnlyHint: true,
@@ -55,7 +55,12 @@ export const createCreativeOtterMcp = (
   )
   registerAccountResource(server, appUrl)
   if (client && hasMediaPermission) {
-    registerGenerationStatusResource(server, client, context)
+    registerGenerationStatusResource(
+      server,
+      client,
+      context,
+      previewAccessToken,
+    )
     registerMediaTools(server, client, context, appUrl, previewAccessToken)
     registerNativeTools(server, client, context, previewAccessToken)
     registerGalleryTools(server, client, context, previewAccessToken)

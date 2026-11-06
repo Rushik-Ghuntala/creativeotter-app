@@ -145,3 +145,20 @@ test("gallery cache matches the complete set, supports reordered slides and stri
   )
   assert.ok(!JSON.stringify([...cache.values]).includes("must-never-be-stored"))
 })
+
+test("renewing one gallery image never overwrites the gallery credential or lends access to another slide", () => {
+  const cache = storage()
+  const second = {
+    ...image,
+    generation_id: "10000000-0000-4000-8000-000000000001",
+  }
+  const renewed = { ...access, token: "sp1." + "b".repeat(43) }
+  rememberSavedPreviewAccess([image, second], access, cache)
+  rememberSavedPreviewAccess([image], renewed, cache)
+  assert.deepEqual(
+    restoreSavedPreviewAccess([image, second], null, cache),
+    access,
+  )
+  assert.deepEqual(restoreSavedPreviewAccess([image], null, cache), renewed)
+  assert.equal(restoreSavedPreviewAccess([second], null, cache), null)
+})

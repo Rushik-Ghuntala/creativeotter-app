@@ -4,7 +4,10 @@ import {
   rememberSavedPreviewAccess,
   forgetSavedPreviewAccess,
 } from "@/lib/mcp/preview-cache"
-import { nextPreviewRefreshAt } from "@/lib/mcp/preview-schedule"
+import {
+  nextPreviewRefreshAt,
+  shouldRefreshPreview,
+} from "@/lib/mcp/preview-schedule"
 import {
   previewAccessFromResult,
   type PreviewAccess,
@@ -112,9 +115,13 @@ export const GenerationApp = () => {
             refreshGenerationStatus(
               app,
               item,
-              previewAccess,
+              restoreSavedPreviewAccess([item], null) || previewAccess,
               fetch,
-              setPreviewAccess,
+              (next, updated) => {
+                if (next.expires_at === null)
+                  rememberSavedPreviewAccess([updated], next)
+                else setPreviewAccess(next)
+              },
             ),
           ),
         )
@@ -149,7 +156,9 @@ export const GenerationApp = () => {
       } catch (error) {
         const removed = isPreviewAccessRemoved(error)
         if (removed) {
-          forgetSavedPreviewAccess(gallery?.items || [snapshot])
+          const items = gallery?.items || [snapshot]
+          forgetSavedPreviewAccess(items)
+          items.forEach((item) => forgetSavedPreviewAccess([item]))
           setPreviewAccess(null)
         }
         retryAfter.current = removed ? Infinity : Date.now() + 60_000
@@ -202,13 +211,15 @@ export const GenerationApp = () => {
       const now = Date.now()
       if (
         document.visibilityState === "visible" &&
-        now >= retryAfter.current &&
-        now >=
+        shouldRefreshPreview(
+          now,
+          retryAfter.current,
           Math.min(
             ...(gallery?.items || [snapshot]).map((item) =>
               nextPreviewRefreshAt(item, previewAccess, lastSuccess.current),
             ),
-          )
+          ),
+        )
       )
         void refresh(true)
     }

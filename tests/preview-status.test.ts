@@ -288,3 +288,37 @@ test("automatic scoped renewal passes the former 15-minute boundary without exte
   t.mock.timers.tick(11000)
   await assert.rejects(() => decryptPreviewAccess(capped.token))
 })
+
+test("Codex desktop's observed preview origin passes CORS without accepting arbitrary custom schemes or lookalike hosts", async () => {
+  const origin =
+    "codex-sandbox://mcp-app-8f98a8ecad00524dbb641bb2e892bef0bcd37d1a73647018.web-sandbox.oaiusercontent.com"
+  const response = await handlePreviewStatus(
+    new Request("https://creativeotter-app.vercel.app/api/preview/status", {
+      method: "OPTIONS",
+      headers: {
+        Origin: origin,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "authorization,content-type",
+      },
+    }),
+  )
+  assert.equal(response.status, 204)
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"), origin)
+  assert.equal(response.headers.get("Access-Control-Allow-Credentials"), null)
+  const unauthenticated = await handlePreviewStatus(
+    new Request("https://creativeotter-app.vercel.app/api/preview/status", {
+      method: "POST",
+      headers: { Origin: origin },
+    }),
+  )
+  assert.equal(unauthenticated.status, 401)
+  for (const bad of [
+    "codex-sandbox://attacker.invalid",
+    "codex-sandbox://mcp-app-fixture.web-sandbox.oaiusercontent.com.attacker.invalid",
+    "codex-sandbox://arbitrary.oaiusercontent.com",
+    "custom://mcp-app-fixture.web-sandbox.oaiusercontent.com",
+    "codex-sandbox://mcp-app-fixture.web-sandbox.oaiusercontent.com:1234",
+    "codex-sandbox://user@mcp-app-fixture.web-sandbox.oaiusercontent.com",
+  ])
+    assert.equal(isPreviewOriginAllowed(bad), false)
+})

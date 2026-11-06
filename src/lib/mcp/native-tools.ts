@@ -277,8 +277,13 @@ export const registerNativeTools = (
       },
     },
     async ({ generation_id }) =>
-      safely(() =>
-        getNativeSnapshot(client, context.workspace.id, generation_id),
+      attachPreviewAccess(
+        await safely(() =>
+          getNativeSnapshot(client, context.workspace.id, generation_id),
+        ),
+        previewAccessToken,
+        context,
+        client,
       ),
   )
 }
