@@ -10,6 +10,8 @@ import {
 } from "@/lib/brand/public-fetch"
 import {
   extractWebsiteArtwork,
+  declaredBrandBundle,
+  officialBrandLinks,
   type ArtworkCandidate,
 } from "@/lib/brand/extract"
 import { normalizeBrandImage } from "@/lib/brand/image"
@@ -35,7 +37,28 @@ export const collectWebsiteArtwork = async (
   )
   const candidates = [...first.candidates],
     pages = [homepage.url]
-  for (const link of first.links
+  const supportingLinks = [...first.links]
+  if (!first.candidates.some((candidate) => candidate.role === "logo")) {
+    const bundle = declaredBrandBundle(
+      homepage.bytes.toString("utf8"),
+      homepage.url,
+    )
+    if (bundle) {
+      try {
+        const resource = await read(bundle, 1536 * 1024)
+        if (/javascript|text\/plain/.test(resource.mime))
+          supportingLinks.unshift(
+            ...officialBrandLinks(
+              resource.bytes.toString("utf8"),
+              homepage.url,
+            ),
+          )
+      } catch {
+        /* Some sites expose only app marks in the public initial page. */
+      }
+    }
+  }
+  for (const link of [...new Set(supportingLinks)]
     .filter((link) => link !== homepage.url)
     .slice(0, 2)) {
     try {
@@ -49,8 +72,11 @@ export const collectWebsiteArtwork = async (
         continue
       pages.push(page.url)
       candidates.push(
-        ...extractWebsiteArtwork(page.bytes.toString("utf8"), page.url)
-          .candidates,
+        ...extractWebsiteArtwork(
+          page.bytes.toString("utf8"),
+          page.url,
+          homepage.url,
+        ).candidates,
       )
     } catch {
       /* A blocked supporting page does not discard usable homepage artwork. */

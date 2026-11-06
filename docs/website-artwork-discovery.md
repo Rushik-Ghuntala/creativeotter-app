@@ -11,3 +11,7 @@ This handles server-visible images, image sources, inline brand SVGs, social pre
 Local authenticated tests imported SpaceOffice's actual mark and agents, Duolingo's actual Duo artwork/app mark and Linear's actual identity/artwork from website URLs only. Test assets live in a disposable workspace. Raw files, private URLs and account information are excluded from release ZIPs. Live ordinary-prompt tests in each host are recorded separately from scripted backend checks.
 
 Implementation references: [htmlparser2](https://github.com/fb55/htmlparser2), [sharp image limits](https://sharp.pixelplumbing.com/api-constructor/).
+
+For JavaScript-only homepages with no full logo, discovery may read one declared app bundle as bounded text to find actual official press/design links within the company domain. It never executes that bundle. Supporting subdomains retain the original company identity, and blog logos cannot substitute for the company wordmark.
+
+The API pins Sharp 0.34.5, matching Next.js 16.2.9. This avoids loading the 0.35 native binary against Next’s older hoisted Linux libvips under Yarn Classic. The separate HyperFrames dependency retains its own supported Sharp version. Linux installation and build results must be checked in Ubuntu CI/Vercel; a macOS build alone does not establish Linux compatibility.

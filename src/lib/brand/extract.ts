@@ -16,7 +16,11 @@ const clean = (value: string) =>
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 120)
-export const extractWebsiteArtwork = (html: string, page: string) => {
+export const extractWebsiteArtwork = (
+  html: string,
+  page: string,
+  companyWebsite = page,
+) => {
   const doc = parseDocument(html)
   const elements = DomUtils.findAll(() => true, doc.children)
   const candidates: ArtworkCandidate[] = [],
@@ -35,6 +39,11 @@ export const extractWebsiteArtwork = (html: string, page: string) => {
         /tracking|pixel|spacer|badge|avatar|testimonial|customer.logo|partner.logo|reviewer|trustpilot/.test(
           clues,
         )
+      )
+        return
+      if (
+        secondaryPage &&
+        /blog[-_ ]?logo|blog wordmark/i.test(`${url} ${label}`)
       )
         return
       const role =
@@ -70,7 +79,11 @@ export const extractWebsiteArtwork = (html: string, page: string) => {
       /* Invalid and non-public URL forms are ignored. */
     }
   }
-  const brand = new URL(page).hostname.replace(/^www\./, "").split(".")[0]
+  const secondaryPage =
+    new URL(page).hostname !== new URL(companyWebsite).hostname
+  const brand = new URL(companyWebsite).hostname
+    .replace(/^www\./, "")
+    .split(".")[0]
   for (const [index, node] of elements.entries()) {
     const a = node.attribs
     let parent = node.parent,
@@ -138,6 +151,7 @@ export const extractWebsiteArtwork = (html: string, page: string) => {
         !(home && (!label || /^(logo|brand|home)$/i.test(label)))
       )
         continue
+      if (secondaryPage && /blog/i.test(label)) continue
       const svg = DomUtils.getOuterHTML(node)
       if (svg.length < 80000 && svg.includes("<path"))
         candidates.push({
@@ -182,4 +196,42 @@ export const extractWebsiteArtwork = (html: string, page: string) => {
       )
       .slice(0, 6),
   }
+}
+
+// Read only a declared app bundle when a JS homepage exposes no full logo.
+// It is parsed as text for official brand-page links, never executed.
+export const declaredBrandBundle = (html: string, page: string) => {
+  const nodes = DomUtils.findAll(
+    (node) => node.name === "script",
+    parseDocument(html).children,
+  )
+  for (const node of nodes) {
+    const source = node.attribs.src
+    if (!source) continue
+    try {
+      const url = publicWebsiteUrl(source, page)
+      if (/(?:^|\/)(?:app|main|index|home|page)[-./]/i.test(url.pathname))
+        return url.href
+    } catch {}
+  }
+  return null
+}
+export const officialBrandLinks = (source: string, page: string) => {
+  const scope = new URL(page).hostname.replace(/^www\./, "")
+  const decoded = source.replace(/\\u002[fF]/g, "/").replace(/\\\//g, "/")
+  const links: string[] = []
+  for (const match of decoded.matchAll(/https:\/\/[^\s"'<>`\\)]+/g)) {
+    try {
+      const url = publicWebsiteUrl(match[0])
+      if (
+        (url.hostname === scope || url.hostname.endsWith(`.${scope}`)) &&
+        /(?:^|[./-])(?:press|brand|design|media)(?:[./-]|$)/i.test(
+          url.hostname + url.pathname,
+        ) &&
+        !url.search
+      )
+        links.push(url.href)
+    } catch {}
+  }
+  return [...new Set(links)].slice(0, 2)
 }

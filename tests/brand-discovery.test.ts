@@ -5,7 +5,11 @@ import {
   publicAddress,
   createPublicWebsiteReader,
 } from "@/lib/brand/public-fetch"
-import { extractWebsiteArtwork } from "@/lib/brand/extract"
+import {
+  extractWebsiteArtwork,
+  declaredBrandBundle,
+  officialBrandLinks,
+} from "@/lib/brand/extract"
 import { normalizeBrandImage, sanitizeBrandSvg } from "@/lib/brand/image"
 import {
   collectWebsiteArtwork,
@@ -112,5 +116,41 @@ test("discovery checks workspace media permission before website access or stora
   await assert.rejects(
     discoverBrandAssets(client, "fixture", "https://acme.com", 6),
     /media access/,
+  )
+})
+
+test("JS-only sites can reveal official brand pages through declared bundles without executing code", () => {
+  assert.equal(
+    declaredBrandBundle(
+      '<script src="https://cdn.acme.com/js/app-123.js"></script>',
+      "https://acme.com/",
+    ),
+    "https://cdn.acme.com/js/app-123.js",
+  )
+  assert.deepEqual(
+    officialBrandLinks(
+      'const press="https://press.acme.com";const wrong="https://press.badacme.com";',
+      "https://acme.com/",
+    ),
+    ["https://press.acme.com/"],
+  )
+})
+
+test("supporting subdomains retain the parent brand identity rather than substituting a blog logo", () => {
+  const html =
+    '<a href="/"><svg width="200" height="60" aria-label="Acme logo"><path d="M0 0h200v60H0z"/></svg></a><img src="/BlogLogo.png" alt="Blog logo"/>'
+  const result = extractWebsiteArtwork(
+    html,
+    "https://press.acme.com/",
+    "https://acme.com/",
+  )
+  assert.equal(result.candidates.filter((x) => x.role === "logo").length, 1)
+  assert.equal(result.candidates[0].label, "Acme logo")
+  assert.equal(
+    declaredBrandBundle(
+      '<script src="https://["></script>',
+      "https://acme.com/",
+    ),
+    null,
   )
 })

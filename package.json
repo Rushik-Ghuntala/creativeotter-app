@@ -1,6 +1,6 @@
 {
   "name": "creativeotter-app",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "private": true,
   "scripts": {
     "dev": "yarn build:ui && next dev --turbopack",
@@ -68,7 +68,7 @@
     "react-redux": "^9.3.0",
     "sanitize-html": "2.17.0",
     "server-only": "^0.0.1",
-    "sharp": "0.35.5",
+    "sharp": "0.34.5",
     "tailwind-merge": "^3.6.0",
     "tsx": "^4.23.15",
     "zod": "^4.6.7"
