@@ -1,6 +1,6 @@
 {
   "product": "CreativeOtter",
-  "skills_version": "0.8.0",
+  "skills_version": "0.8.1",
   "skill_count_per_plugin": 21,
   "mcp_url": "https://creativeotter-app.vercel.app/api/mcp",
   "authentication": "OAuth via each host",
@@ -8,7 +8,7 @@
   "generation_on_install": false,
   "marketplace_approved": false,
   "source_repository": "https://github.com/Rushik-Ghuntala/creativeotter-skills",
-  "source_commit": "5139cc6421694c3748379c36116df8d8cae027b8",
+  "source_commit": "708cb4edf1611bd4cd8d971087e55ece25b6cc95",
   "source_has_local_changes": false,
   "chatgpt_web": {
     "registered_app_id": "asdk_app_6aed79fcb8bc819194e28fa8c7bb49dc",
@@ -17,24 +17,24 @@
   },
   "archives": [
     {
-      "filename": "creativeotter-test-kit-v0.8.0.zip",
-      "bytes": 4993914,
-      "sha256": "9043ad95f45487af86af5f9e93eba4ac11737948d1779c491bd90b9f85315f25"
+      "filename": "creativeotter-test-kit-v0.8.1.zip",
+      "bytes": 5015964,
+      "sha256": "49042123edd87ad4fd969c8d166ee1dfb006d0a7bda2194e6951705d785e2017"
     },
     {
-      "filename": "creativeotter-codex-desktop-v0.8.0.zip",
-      "bytes": 1235137,
-      "sha256": "db94924e14101636a533f7d9cbedafaf2bea6730a1ca77934c50469d768a58a2"
+      "filename": "creativeotter-codex-desktop-v0.8.1.zip",
+      "bytes": 1240645,
+      "sha256": "d391bd2fd877d4af7058bf4c82c4c1590e234ff79c22f0d2c99ce77b289746d1"
     },
     {
-      "filename": "creativeotter-claude-v0.8.0.zip",
-      "bytes": 1233388,
-      "sha256": "a6657278403b932fd6378b2214d16d40b2cf8db495a3d2f0a1b0935207e729f2"
+      "filename": "creativeotter-claude-v0.8.1.zip",
+      "bytes": 1238896,
+      "sha256": "eb9b00a6fd4b52cb2f1ce6c99866d407d06c56dd8db19cf3e2ac94a1dd331aea"
     },
     {
-      "filename": "creativeotter-chatgpt-web-v0.8.0.zip",
-      "bytes": 1234543,
-      "sha256": "69a5c31411192eb5e07ccd0285b031f71af9320f225b9e18943f9528afa5faa2"
+      "filename": "creativeotter-chatgpt-web-v0.8.1.zip",
+      "bytes": 1240049,
+      "sha256": "3a2ee07bc6c6fb409bb7cf5de34604374c257354bb9085e8db5733447774544d"
     }
   ]
 }

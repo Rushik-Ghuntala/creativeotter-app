@@ -10,6 +10,8 @@ import {
   type MotionSettings,
 } from "@/lib/render/project"
 import { renderingEnabled } from "@/lib/render/contracts"
+import { bundleMotionAssets } from "@/lib/render/project-assets"
+import type { MotionAsset } from "@/lib/render/project"
 type Client = SupabaseClient<Database>
 export const saveMotionRevision = async (
   client: Client,
@@ -21,10 +23,12 @@ export const saveMotionRevision = async (
     parent_id?: string | null
     change_summary?: string
     request_key?: string
+    assets?: MotionAsset[]
   },
 ) => {
   if (!renderingEnabled())
     throw new Error("Motion graphics are not available yet.")
+  zip = await bundleMotionAssets(client, workspace, zip, details.assets || [])
   readProjectZip(zip)
   const settings = motionSettingsSchema.parse(details.settings)
   const result = await client.rpc("save_motion_revision", {

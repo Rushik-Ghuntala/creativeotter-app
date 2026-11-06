@@ -1,6 +1,6 @@
 {
   "name": "creativeotter-app",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "private": true,
   "scripts": {
     "dev": "yarn build:ui && next dev --turbopack",
@@ -41,7 +41,8 @@
     "test:motion:web": "node --import tsx scripts/test-motion-web.ts",
     "test:motion:oauth": "HYPERFRAMES_NO_TELEMETRY=1 node --env-file=.env --conditions=react-server --import tsx scripts/test-motion-oauth.ts",
     "test:motion:cleanup": "node --env-file=.env --import tsx scripts/cleanup-motion-tests.ts",
-    "test:motion:create-web": "HYPERFRAMES_NO_TELEMETRY=1 node --env-file=.env --conditions=react-server --import tsx scripts/test-motion-create-web.ts"
+    "test:motion:create-web": "HYPERFRAMES_NO_TELEMETRY=1 node --env-file=.env --conditions=react-server --import tsx scripts/test-motion-create-web.ts",
+    "test:motion:assets": "HYPERFRAMES_NO_TELEMETRY=1 node --env-file=.env --conditions=react-server --import tsx scripts/test-motion-brand-assets.ts"
   },
   "dependencies": {
     "@hyperframes/core": "0.9.19",

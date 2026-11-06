@@ -3,6 +3,9 @@ import { createInterface } from "node:readline"
 const configPath = process.argv[2]
 const allowed = new Set([
   "get_capabilities",
+  "manage_assets",
+  "manage_themes",
+  "manage_characters",
   "save_motion_project",
   "revise_motion_project",
   "get_motion_project",
@@ -91,6 +94,16 @@ const handle = async (message) => {
     )
       throw new Error(
         "This development connection is limited to motion graphics",
+      )
+    if (
+      message.method === "tools/call" &&
+      ["manage_assets", "manage_themes", "manage_characters"].includes(
+        message.params?.name,
+      ) &&
+      !["list", "get"].includes(message.params?.arguments?.action || "list")
+    )
+      throw new Error(
+        "Brand and artwork discovery is read-only in this development connection",
       )
     const response = await fetch(target, {
       method: "POST",

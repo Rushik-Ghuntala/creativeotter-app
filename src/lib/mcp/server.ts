@@ -28,7 +28,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.10.0"
+const productVersion = "0.10.1"
 
 const readOnly = {
   readOnlyHint: true,

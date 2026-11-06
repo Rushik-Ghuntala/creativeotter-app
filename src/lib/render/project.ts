@@ -54,6 +54,14 @@ export const projectFilesSchema = z
   )
   .min(1)
   .max(128)
+export const motionAssetsSchema = z
+  .array(
+    z.object({ asset_id: z.uuid(), path: z.string().min(1).max(180) }).strict(),
+  )
+  .max(12)
+  .default([])
+export type MotionAsset = z.infer<typeof motionAssetsSchema>[number]
+
 const extension =
   /\.(html|css|js|json|svg|png|jpe?g|webp|woff2?|ttf|otf|wav|mp3|m4a|ogg|mp4|webm|md|txt)$/i
 export const validProjectPath = (name: string) => {

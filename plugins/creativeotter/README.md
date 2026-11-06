@@ -4,12 +4,14 @@ Use the package matching the assistant. The previous `creativeotter-chatgpt-code
 
 | File                                     | Use                                                                                                         |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `creativeotter-chatgpt-web-v0.8.0.zip`   | ChatGPT web: 21 skills referencing the registered CreativeOtter Web app in the account where it was created |
-| `creativeotter-codex-desktop-v0.8.0.zip` | Codex desktop / CLI: 21 skills and direct MCP configuration                                                 |
-| `creativeotter-claude-v0.8.0.zip`        | Claude Code / compatible plugin upload: 21 skills and direct MCP configuration                              |
-| `creativeotter-test-kit-v0.8.0.zip`      | Extract first for Codex/Claude folders, both desktop upload ZIPs, setup notes and other client examples     |
+| `creativeotter-chatgpt-web-v0.8.1.zip`   | ChatGPT web: 21 skills referencing the registered CreativeOtter Web app in the account where it was created |
+| `creativeotter-codex-desktop-v0.8.1.zip` | Codex desktop / CLI: 21 skills and direct MCP configuration                                                 |
+| `creativeotter-claude-v0.8.1.zip`        | Claude Code / compatible plugin upload: 21 skills and direct MCP configuration                              |
+| `creativeotter-test-kit-v0.8.1.zip`      | Extract first for Codex/Claude folders, both desktop upload ZIPs, setup notes and other client examples     |
 
 No API keys, login sessions, private images or account data are bundled. Installing does not generate media or spend credits. Historical ZIPs retain their original bytes. `SHA256SUMS` covers the current release.
+
+Version 0.8.1 adds brand/character/library discovery and verified private artwork attachments. Available logos, mascots and agent images are used as actual visuals rather than invented initial avatars.
 
 Motion graphics in this release use the opt-in HyperFrames worker, editable project ZIPs and bundled audio/video. This workflow is tested locally; production rendering remains disabled until worker hosting and customer pricing are configured. See [motion implementation](../../docs/hyperframes-motion.md). Installing the ZIP alone does not enable it.
 

@@ -7,6 +7,7 @@ import {
   MOTION_SOURCE_BUCKET,
   archiveProjectFiles,
   motionSettingsSchema,
+  motionAssetsSchema,
   packProject,
   projectFilesSchema,
   readProjectZip,
@@ -113,8 +114,12 @@ export const registerMotionTools = (
     {
       title: "Save editable motion project",
       description:
-        "Save a complete HyperFrames HTML/CSS/JavaScript project as an immutable private ZIP. No rendering or credits spent. Author code using the host assistant; never use fal.ai for pure motion. Include index.html, a sized root with data-composition-id/data-width/data-height/data-duration, and matching paused window.__timelines entry. Nested compositions and pinned GSAP 3.14.2 are supported; scripts use https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js, resolved locally. Bundle all other assets; no network/npm execution. MP4 only, 1–30 seconds, even dimensions 128–1920 and 12/24/25/30fps. Named audio/video clips need explicit data-start/data-duration, fixed data-media-start/playback-rate/data-volume; include their files. No speed ramps or audio automation yet. For large complete ZIPs use prepare_motion_upload and confirm_motion_upload. Then prepare_render with returned render_input, render_design and poll get_render for CreativeOtter's branded preview. Never expose source or IDs in the user reply unless requested.",
-      inputSchema: { ...details, files: projectFilesSchema },
+        "Save a complete HyperFrames HTML/CSS/JavaScript project as an immutable private ZIP. No rendering or credits spent. Author code using the host assistant; never use fal.ai for pure motion. Include index.html, a sized root with data-composition-id/data-width/data-height/data-duration, and matching paused window.__timelines entry. Nested compositions and pinned GSAP 3.14.2 are supported; scripts use https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js, resolved locally. Before authoring a branded video, inspect saved themes, characters and library references or the user's website. Use the real logo, mascot and product visuals when available, not initials or invented icons. Pass saved image IDs as the assets array with asset_id and an assets/ image path and reference those relative paths in HTML; the server copies verified private bytes into the ZIP without exposing URLs. Other supplied media must also be bundled; no network/npm execution. MP4 only, 1–30 seconds, even dimensions 128–1920 and 12/24/25/30fps. Named audio/video clips need explicit data-start/data-duration, fixed data-media-start/playback-rate/data-volume; include their files. No speed ramps or audio automation yet. For large complete ZIPs use prepare_motion_upload and confirm_motion_upload. Then prepare_render with returned render_input, render_design and poll get_render for CreativeOtter's branded preview. Never expose source or IDs in the user reply unless requested.",
+      inputSchema: {
+        ...details,
+        files: projectFilesSchema,
+        assets: motionAssetsSchema,
+      },
       annotations: { ...read, readOnlyHint: false },
       _meta: security,
     },
@@ -134,10 +139,11 @@ export const registerMotionTools = (
     {
       title: "Save a new motion version",
       description:
-        "Edit the user's saved motion project by replacing selected text source files while preserving bundled assets and every prior version. No credits spent; render separately only when requested. Use the latest revision to avoid overwriting someone else's work. Keep the root duration/size and settings consistent.",
+        "Edit the user's saved motion project by replacing selected text source files while preserving bundled assets and every prior version. No credits spent; render separately only when requested. Use the latest revision to avoid overwriting someone else's work. Keep the root duration/size and settings consistent. Optional assets attach additional saved images at unused assets/ paths; update source references to use them. Existing artwork is never silently overwritten.",
       inputSchema: {
         ...details,
         parent_id: z.uuid(),
+        assets: motionAssetsSchema,
         changes: z
           .array(
             z.object({ path: z.string(), content: z.string().max(512000) }),

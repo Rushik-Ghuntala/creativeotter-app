@@ -59,3 +59,13 @@ The schema fixtures include normal prompts such as “Make my bakery headline po
 ## Attribution
 
 HyperFrames is Apache-2.0; preserve its license/notice when redistributing. GSAP uses its own standard license, not Apache-2.0. Its official license FAQ permits AI-generated GSAP code; any future visual animation-builder product requires checking the applicable restrictions: https://gsap.com/community/standard-license/ . The preserved copied skill snapshot remains byte-identical.
+
+## Reusing real brand artwork
+
+The motion skill resolves relevant brand kits, saved characters and library references before authoring. For a supplied website, the host inspects actual logos, mascot/agent files and product imagery when its browsing/download tools permit. Available artwork should appear as artwork, not invented initial avatars. Explicitly text-only or abstract briefs stay text-only or abstract.
+
+`save_motion_project` and `revise_motion_project` accept optional `assets: [{asset_id, path}]`. Each path must be an unused PNG/JPEG/WebP name under `assets/`. The authenticated backend reads only ready images from the current workspace and copies byte-verified files into the private source ZIP. Relative HTML references work offline; signed library URLs do not enter the source. Revisions preserve existing assets; new attachments cannot silently overwrite them. Other website SVGs/media can still be bundled by the host in project files or a complete ZIP. This adds no public-URL fetcher, migration, generation or charge.
+
+Run `node --env-file=.env --conditions=react-server --import tsx scripts/test-motion-brand-assets.ts /path/to/public-reference-files /path/to/report` for the isolated fixture. It expects local `logo.png`, `hydrogen.webp`, `copper.webp`, `silicon.webp`; these are test inputs, not bundled product artwork. The normal brief is “Make a quick video for spaceoffice.ai.” The scripted real-OAuth MCP test proves record/library discovery, exact source attachments, duplicate-save safety, workspace denial, preservation through revisions, one 16-credit test render and hash-matched MP4/project downloads. It cleans its own test user, OAuth client and objects. This is a backend workflow test, not evidence that every host will infer every asset from a brief.
+
+On 6 November 2026 the saved six-second, 1280×720/30fps output was decoded at 0.7, 2.8 and 5.3 seconds and visually checked: the official SpaceOffice logo and Hydrogen/Copper/Silicon images are visible. The fixture wallet changed 100→84, reserved 0; no fal.ai calls or production account credits. The Codex/Claude packages contain the updated discovery instructions. Existing installed hosts must load the updated package/schema; production worker/pricing gates are unchanged.
