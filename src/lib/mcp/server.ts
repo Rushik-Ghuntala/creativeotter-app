@@ -1,3 +1,4 @@
+import { BRAND_TOOLS, registerBrandTools } from "@/lib/mcp/brand-tools"
 import { registerRenderTools, RENDER_TOOLS } from "@/lib/mcp/render-tools"
 import { renderingEnabled } from "@/lib/render/contracts"
 import { getRenderAccess } from "@/lib/render/service"
@@ -28,7 +29,7 @@ import {
 } from "@/lib/mcp/account-resource"
 import type { McpContext } from "@/lib/database.types"
 
-const productVersion = "0.10.1"
+const productVersion = "0.11.0"
 
 const readOnly = {
   readOnlyHint: true,
@@ -68,6 +69,7 @@ export const createCreativeOtterMcp = (
     registerNativeTools(server, client, context, previewAccessToken)
     registerGalleryTools(server, client, context, previewAccessToken)
     registerStudioTools(server, client, context, appUrl)
+    registerBrandTools(server, client, context)
     registerRenderTools(server, client, context, appUrl)
   }
   server.registerTool(
@@ -115,6 +117,7 @@ export const createCreativeOtterMcp = (
                   : ["get_native_generation"]),
                 "create_upload_url",
                 "complete_upload",
+                ...BRAND_TOOLS,
                 "manage_assets",
               ]
             : []),
@@ -181,11 +184,12 @@ export const createCreativeOtterMcp = (
           billing_policy:
             "Only an explicitly requested MP4 render spends the live quoted credits. Saving or revising source, opening previews and downloading existing outputs are free.",
           existing_brand_artwork: {
+            discovery_tool: "discover_brand_assets",
             supported: true,
             image_generation_required: false,
             saved_image_attachments: true,
             guidance:
-              "Existing logos, mascots, product images and screenshots are source files, not image-generation requests. Reuse relevant owned library assets or bundle existing files retrieved with the host's browsing/download tools. This requires no fal.ai key or image-generation capability. If retrieval tools fail, explain the retrieval limit and ask for references; do not claim existing artwork cannot be used.",
+              "Existing logos, mascots, product images and screenshots are source files, not image-generation requests. Call discover_brand_assets with the company website to find and save real artwork automatically, then use returned private assets in motion projects. Existing saved artwork can also be reused. This requires no fal.ai key or image-generation capability. If retrieval tools fail, explain the retrieval limit and ask for references; do not claim existing artwork cannot be used.",
           },
           bundled_audio_video: true,
           network_access: false,

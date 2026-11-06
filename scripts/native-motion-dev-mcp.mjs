@@ -4,6 +4,7 @@ const configPath = process.argv[2]
 const previewResource = "ui://creativeotter-dev/render-v3.html"
 const allowed = new Set([
   "get_capabilities",
+  "discover_brand_assets",
   "manage_assets",
   "manage_themes",
   "manage_characters",

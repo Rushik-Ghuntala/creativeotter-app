@@ -1,6 +1,6 @@
 {
   "name": "creativeotter-app",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "private": true,
   "scripts": {
     "dev": "yarn build:ui && next dev --turbopack",
@@ -56,7 +56,9 @@
     "clsx": "^2.1.1",
     "fflate": "0.8.2",
     "gsap": "3.14.2",
+    "htmlparser2": "11.0.0",
     "image-size": "^2.0.4",
+    "ipaddr.js": "2.5.0",
     "jose": "^6.2.14",
     "lucide-react": "^1.22.0",
     "next": "16.2.9",
@@ -66,9 +68,10 @@
     "react-redux": "^9.3.0",
     "sanitize-html": "2.17.0",
     "server-only": "^0.0.1",
+    "sharp": "0.35.5",
     "tailwind-merge": "^3.6.0",
-    "zod": "^4.6.7",
-    "tsx": "^4.23.15"
+    "tsx": "^4.23.15",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
