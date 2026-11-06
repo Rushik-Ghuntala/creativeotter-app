@@ -1,3 +1,4 @@
+import { downloadSavedImage } from "@/lib/mcp/download"
 import {
   restoreSavedPreviewAccess,
   rememberSavedPreviewAccess,
@@ -322,8 +323,17 @@ export const GenerationApp = () => {
         onRefresh={() => void refresh()}
         onReview={() => void open(snapshot.job_url || snapshot.review_url)}
         onDownload={() => {
-          void refresh().then((updated) => {
-            if (updated) return open(updated.outputs[0]?.download_url || null)
+          void refresh().then(async (updated) => {
+            if (!app || !updated?.outputs[0]) return
+            try {
+              const result = await downloadSavedImage(app, updated.outputs[0])
+              if (result.isError)
+                setNotice("The download wasn’t completed. You can try again.")
+            } catch {
+              setNotice(
+                "Couldn’t start the download. Try again or use the saved image link in the conversation.",
+              )
+            }
           })
         }}
         onFavorite={() => void favorite()}
